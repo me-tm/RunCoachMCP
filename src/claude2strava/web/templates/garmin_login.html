@@ -4,8 +4,13 @@
 {% block content %}
 <div class="page-wrap">
   <div class="box">
-    <div class="eyebrow" style="color:var(--garmin);margin-bottom:18px;">Garmin Connect</div>
-    <h1>Anmelden</h1>
+    <div style="margin-bottom:20px;">
+      <div class="eyebrow-badge" style="--badge-dot: var(--garmin);">
+        <span class="eyebrow-badge__dot" style="background:var(--garmin);animation:none;" aria-hidden="true"></span>
+        Garmin Connect
+      </div>
+    </div>
+    <h1 style="margin-bottom:10px;">Anmelden</h1>
     <p style="margin-bottom:24px;">Gib deine Garmin-Zugangsdaten ein. Das Passwort wird <strong style="color:var(--ink);">nicht</strong> gespeichert — nur die Session-Cookies nach erfolgreichem Login.</p>
 
     {% if error %}
@@ -18,12 +23,20 @@
         <input id="email" class="form-input" type="email" name="email"
                required autocomplete="email" placeholder="deine@email.de">
       </div>
-      <div class="form-field">
+      <div class="form-field" style="margin-bottom:24px;">
         <label class="form-label" for="password">Passwort</label>
         <input id="password" class="form-input" type="password" name="password"
                required autocomplete="current-password" placeholder="••••••••">
       </div>
-      <button type="submit" class="btn btn-garmin btn--full">Verbinden</button>
+      <button type="submit" class="btn-island btn-island--garmin" style="width:100%;">
+        <span>Verbinden</span>
+        <span class="btn-island__icon" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </span>
+      </button>
     </form>
 
     <hr class="divider">

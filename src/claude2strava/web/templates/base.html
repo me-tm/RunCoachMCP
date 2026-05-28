@@ -9,15 +9,15 @@
   <title>{% block title %}RunCoach MCP{% endblock %}</title>
   <style>
     :root {
-      --bg:        oklch(11%  0.008 250);
-      --bg-panel:  oklch(16%  0.011 250);
-      --bg-raise:  oklch(21%  0.013 250);
-      --border:    oklch(23%  0.014 250);
-      --border-sub:oklch(18%  0.010 250);
+      --bg:         oklch(10.5% 0.008 250);
+      --bg-panel:   oklch(15.5% 0.010 250);
+      --bg-raise:   oklch(21%   0.013 250);
+      --border:     oklch(24%   0.015 250);
+      --border-sub: oklch(18%   0.010 250);
 
       --ink:   oklch(93% 0.006 250);
       --ink-2: oklch(60% 0.009 250);
-      --ink-3: oklch(38% 0.007 250);
+      --ink-3: oklch(37% 0.007 250);
 
       --strava:    oklch(62% 0.22  30);
       --strava-bg: oklch(20% 0.07  30);
@@ -32,7 +32,8 @@
       --r:    10px;
       --r-lg: 14px;
 
-      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      /* Premium spring-like easing — cubic-bezier(0.32, 0.72, 0, 1) */
+      --ease: cubic-bezier(0.32, 0.72, 0, 1);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,6 +48,35 @@
       justify-content: center;
       padding: 28px 16px;
       line-height: 1.5;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient background orbs (Ethereal Glass vibe) ──────────
+       Fixed, pointer-events-none, GPU-composited via will-change.
+       No filter:blur — radial-gradient natively creates soft diffusion. */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+    }
+    .bg-orb--a {
+      width: 680px;
+      height: 680px;
+      background: radial-gradient(circle, oklch(62% 0.22 30 / 0.065) 0%, transparent 65%);
+      top: -220px;
+      left: -220px;
+      animation: orb-drift 24s ease-in-out infinite;
+    }
+    .bg-orb--b {
+      width: 580px;
+      height: 580px;
+      background: radial-gradient(circle, oklch(57% 0.18 240 / 0.060) 0%, transparent 65%);
+      bottom: -160px;
+      right: -160px;
+      animation: orb-drift 30s ease-in-out infinite reverse;
     }
 
     /* ── Typography ─────────────────────────────────────────────── */
@@ -73,6 +103,31 @@
       color: var(--ink-3);
     }
 
+    /* Pill badge with pulsing LED dot — used in masthead and single-page headers */
+    .eyebrow-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px 4px 8px;
+      background: oklch(19% 0.012 250);
+      border: 1px solid oklch(26% 0.015 250);
+      border-radius: 99px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .eyebrow-badge__dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      animation: led-pulse 2.8s ease-in-out infinite;
+    }
+
     .small {
       font-size: 0.77rem;
       color: var(--ink-3);
@@ -89,19 +144,37 @@
       font-family: ui-monospace, 'Cascadia Code', monospace;
     }
 
-    /* ── Single-page wrap ────────────────────────────────────────── */
+    /* ── Double-Bezel page wrap (narrow pages) ─────────────────── */
+    /* Outer shell: gradient border via background + padding-bezel   */
     .page-wrap {
       width: 100%;
       max-width: 400px;
-      animation: fade-up 0.25s var(--ease-out) both;
+      position: relative;
+      z-index: 1;
+      animation: fade-up 0.28s var(--ease) both;
+
+      border-radius: 20px;
+      padding: 1.5px;
+      background: linear-gradient(
+        145deg,
+        oklch(28% 0.016 250 / 0.75),
+        oklch(18% 0.010 250 / 0.35) 70%
+      );
+      box-shadow:
+        inset 0 0.5px 0 rgba(255,255,255,0.04),
+        0 40px 80px -20px rgba(0,0,0,0.40);
     }
 
+    /* Inner core */
     .box {
       background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 40px 36px;
+      border: none;
+      border-radius: calc(20px - 1.5px);
+      padding: 42px 36px;
       text-align: center;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.065),
+        inset 0 -1px 0 rgba(0,0,0,0.18);
     }
 
     /* ── Status indicators ───────────────────────────────────────── */
@@ -123,14 +196,11 @@
       flex-shrink: 0;
     }
     .status--on  { color: var(--green); }
-    .status--on  .status__dot {
-      background: var(--green);
-      animation: led-pulse 2.8s ease-in-out infinite;
-    }
+    .status--on  .status__dot { background: var(--green); animation: led-pulse 2.8s ease-in-out infinite; }
     .status--off { color: var(--ink-3); }
     .status--off .status__dot { background: var(--ink-3); }
 
-    /* ── Buttons ─────────────────────────────────────────────────── */
+    /* ── Standard buttons ────────────────────────────────────────── */
     .btn {
       position: relative;
       overflow: hidden;
@@ -150,47 +220,33 @@
       line-height: 1;
       white-space: nowrap;
       transition:
-        transform 0.2s var(--ease-out),
-        filter  0.2s ease,
-        opacity 0.15s ease,
-        border-color 0.15s ease,
-        background 0.15s ease;
+        transform 0.35s var(--ease),
+        filter     0.2s  ease,
+        background 0.2s  ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
     }
-    /* shimmer on all filled buttons */
-    .btn-strava::after,
-    .btn-garmin::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.14) 50%, transparent 100%);
-      transform: translateX(-110%);
-      transition: transform 0.5s var(--ease-out);
-    }
-    .btn-strava:hover::after,
-    .btn-garmin:hover::after { transform: translateX(110%); }
-
-    .btn:hover:not(:disabled)  { transform: translateY(-1px); }
+    .btn:hover:not(:disabled)  { transform: translateY(-2px); }
     .btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
     .btn:disabled              { opacity: 0.38; cursor: default; }
     .btn--full { width: 100%; }
 
-    .btn-strava   { background: var(--strava);  color: #fff; }
-    .btn-garmin   { background: var(--garmin);  color: #fff; }
     .btn-ghost {
       background: transparent;
       color: var(--ink-2);
       border: 1px solid var(--border);
     }
     .btn-ghost:hover {
-      transform: translateY(-1px);
       border-color: oklch(33% 0.016 250);
       color: var(--ink);
+      background: oklch(19% 0.011 250);
     }
     .btn-secondary {
       background: var(--bg-raise);
       color: var(--ink-2);
       border: 1px solid var(--border);
     }
+    .btn-secondary:hover { color: var(--ink); }
     .btn-danger {
       background: transparent;
       color: var(--red);
@@ -198,7 +254,53 @@
       font-size: 0.75rem;
       padding: 7px 14px;
     }
-    .btn-danger:hover { background: var(--red-bg); border-color: var(--red); transform: translateY(-1px); }
+    .btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+
+    /* ── Button-in-Button island (primary CTAs) ─────────────────── */
+    /* Pill-shaped with nested circular icon — Doppelrand for buttons */
+    .btn-island {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 11px 11px 22px;
+      border-radius: 99px;
+      width: 100%;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1;
+      transition: transform 0.35s var(--ease), filter 0.2s ease;
+    }
+    .btn-island:hover:not(:disabled)  { transform: translateY(-2px); }
+    .btn-island:active:not(:disabled) { transform: scale(0.97); }
+
+    .btn-island--strava { background: var(--strava); color: #fff; }
+    .btn-island--garmin { background: var(--garmin); color: #fff; }
+
+    /* The nested icon circle — physically pressed into the button */
+    .btn-island__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.14),
+        inset 0 -1px 0 rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.35s var(--ease);
+    }
+    .btn-island:hover .btn-island__icon {
+      transform: translate(2px, -1.5px) scale(1.06);
+    }
 
     /* ── Divider ─────────────────────────────────────────────────── */
     .divider {
@@ -208,8 +310,8 @@
     }
 
     /* ── Status icons (callback pages) ──────────────────────────── */
-    .icon-ok  { color: var(--green); width: 2.4rem; height: 2.4rem; display: block; margin: 0 auto 18px; }
-    .icon-err { color: var(--red);   width: 2.4rem; height: 2.4rem; display: block; margin: 0 auto 18px; }
+    .icon-ok  { color: var(--green); width: 2.5rem; height: 2.5rem; display: block; margin: 0 auto 18px; }
+    .icon-err { color: var(--red);   width: 2.5rem; height: 2.5rem; display: block; margin: 0 auto 18px; }
 
     /* ── Error banner ────────────────────────────────────────────── */
     .error-banner {
@@ -244,28 +346,42 @@
       font-size: 0.93rem;
       color: var(--ink);
       outline: none;
-      transition: border-color 0.15s ease;
+      transition: border-color 0.2s var(--ease);
     }
     .form-input:focus { border-color: oklch(44% 0.022 250); }
     .form-input::placeholder { color: var(--ink-3); }
 
     /* ── Keyframes ───────────────────────────────────────────────── */
     @keyframes fade-up {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     @keyframes led-pulse {
       0%, 100% { box-shadow: 0 0 3px oklch(67% 0.19 145 / 0.45); }
-      50%       { box-shadow: 0 0 7px oklch(67% 0.19 145 / 0.75),
-                              0 0 14px oklch(67% 0.19 145 / 0.25); }
+      50%       { box-shadow: 0 0 8px oklch(67% 0.19 145 / 0.75),
+                              0 0 16px oklch(67% 0.19 145 / 0.25); }
     }
+    @keyframes orb-drift {
+      0%, 100% { transform: translate(0, 0)     scale(1);    }
+      33%       { transform: translate(24px, -18px) scale(1.04); }
+      66%       { transform: translate(-12px, 22px) scale(0.97); }
+    }
+
+    /* Respect user's motion preference */
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body>
+  <!-- Ambient background orbs — Ethereal Glass atmosphere -->
+  <div class="bg-orb bg-orb--a" aria-hidden="true"></div>
+  <div class="bg-orb bg-orb--b" aria-hidden="true"></div>
+
   {% block content %}{% endblock %}
 </body>
 </html>
