@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,700;0,900;1,700;1,900&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <title>{% block title %}RunCoach MCP{% endblock %}</title>
   <style>
     :root {
@@ -16,8 +16,8 @@
       --border-sub: oklch(18%   0.010 250);
 
       --ink:   oklch(93% 0.006 250);
-      --ink-2: oklch(60% 0.009 250);
-      --ink-3: oklch(37% 0.007 250);
+      --ink-2: oklch(68% 0.009 250);
+      --ink-3: oklch(55% 0.007 250);
 
       --strava:    oklch(62% 0.22  30);
       --strava-bg: oklch(20% 0.07  30);
@@ -81,7 +81,7 @@
 
     /* ── Typography ─────────────────────────────────────────────── */
     h1 {
-      font-family: 'Big Shoulders Display', sans-serif;
+      font-family: 'Bodoni Moda', serif;
       font-size: 2rem;
       font-weight: 700;
       line-height: 1.05;
@@ -351,7 +351,53 @@
     .form-input:focus { border-color: oklch(44% 0.022 250); }
     .form-input::placeholder { color: var(--ink-3); }
 
+    /* ── Film grain overlay ─────────────────────────────────────── */
+    /* Large tiled area prevents edge gaps during translate animation */
+    .bg-grain {
+      position: fixed;
+      inset: -200%;
+      width: 400%;
+      height: 400%;
+      background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+      background-size: 200px 200px;
+      opacity: 0.06;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+      animation: grain-noise 0.7s step-end infinite;
+    }
+
+    /* ── Horizontal scanlines ────────────────────────────────────── */
+    .bg-scanlines {
+      position: fixed;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        oklch(100% 0 0 / 0.007) 3px,
+        oklch(100% 0 0 / 0.007) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+      animation: scanlines-drift 35s linear infinite;
+    }
+
     /* ── Keyframes ───────────────────────────────────────────────── */
+    @keyframes grain-noise {
+      0%   { transform: translate(  0%,   0%); }
+      14%  { transform: translate( -6%,   4%); }
+      28%  { transform: translate(  4%,  -9%); }
+      42%  { transform: translate( -9%,   2%); }
+      57%  { transform: translate(  7%,  -4%); }
+      71%  { transform: translate( -3%,   9%); }
+      85%  { transform: translate(  5%,   3%); }
+    }
+    @keyframes scanlines-drift {
+      from { background-position: 0 0; }
+      to   { background-position: 0 80px; }
+    }
     @keyframes fade-up {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -381,6 +427,9 @@
   <!-- Ambient background orbs — Ethereal Glass atmosphere -->
   <div class="bg-orb bg-orb--a" aria-hidden="true"></div>
   <div class="bg-orb bg-orb--b" aria-hidden="true"></div>
+  <!-- Film grain + scanlines for tactile depth -->
+  <div class="bg-grain" aria-hidden="true"></div>
+  <div class="bg-scanlines" aria-hidden="true"></div>
 
   {% block content %}{% endblock %}
 </body>
