@@ -1,25 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Garmin 2FA Verifizierung{% endblock %}
+
+{% block head %}
+<style>
+  .otp-input {
+    font-size: 1.6rem;
+    text-align: center;
+    letter-spacing: 0.25em;
+    font-family: 'Big Shoulders Display', sans-serif;
+    font-weight: 700;
+    padding: 14px 13px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="logo">🔐</div>
-<h1>Zwei-Faktor-Authentifizierung</h1>
-<p>Garmin hat eine 2FA-Prüfung ausgelöst. Gib den Code aus deiner Authenticator-App oder deiner E-Mail ein.</p>
+<div class="page-wrap">
+  <div class="box">
+    <div class="eyebrow" style="color:var(--garmin);margin-bottom:18px;">Garmin Connect</div>
+    <h1>Zwei-Faktor-Auth</h1>
+    <p style="margin-bottom:24px;">Garmin hat eine 2FA-Prüfung ausgelöst. Gib den Code aus deiner Authenticator-App oder E-Mail ein.</p>
 
-{% if error %}
-  <div class="badge disconnected" style="margin-bottom:1rem;">{{ error }}</div>
-{% endif %}
+    {% if error %}
+      <div class="error-banner">{{ error }}</div>
+    {% endif %}
 
-<form action="/auth/garmin/verify" method="post">
-  <div style="margin-bottom:1.5rem;">
-    <label style="display:block;font-size:.85rem;font-weight:600;color:#333;margin-bottom:.4rem;">Bestätigungscode</label>
-    <input type="text" name="mfa_code" required autocomplete="one-time-code"
-           inputmode="numeric" pattern="[0-9]*" maxlength="8"
-           style="width:100%;padding:.6rem .8rem;border:1.5px solid #ddd;border-radius:7px;font-size:1.2rem;text-align:center;letter-spacing:.2em;outline:none;"
-           placeholder="123456">
+    <form action="/auth/garmin/verify" method="post">
+      <div class="form-field">
+        <label class="form-label" for="mfa_code">Bestätigungscode</label>
+        <input id="mfa_code" class="form-input otp-input" type="text" name="mfa_code"
+               required autocomplete="one-time-code"
+               inputmode="numeric" pattern="[0-9]*" maxlength="8"
+               placeholder="123456" autofocus>
+      </div>
+      <button type="submit" class="btn btn-garmin btn--full">Bestätigen</button>
+    </form>
+
+    <hr class="divider">
+    <a href="/auth/garmin" class="small" style="color:var(--ink-3);text-decoration:none;">← Neu einloggen</a>
   </div>
-  <button type="submit" class="btn btn-garmin" style="width:100%;">Bestätigen</button>
-</form>
-
-<hr class="divider">
-<a href="/auth/garmin" class="small" style="color:#999;text-decoration:none;">← Neu einloggen</a>
+</div>
 {% endblock %}

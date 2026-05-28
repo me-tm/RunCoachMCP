@@ -1,66 +1,198 @@
 {% extends "base.html" %}
-{% block title %}RunCoach MCP — Dashboard{% endblock %}
+{% block title %}RunCoach MCP{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Dashboard shell ─────────────────────────────────────────── */
+  .dash {
+    width: 100%;
+    max-width: 820px;
+    animation: fade-up 0.28s ease-out both;
+  }
+
+  /* ── Masthead ────────────────────────────────────────────────── */
+  .masthead {
+    text-align: center;
+    margin-bottom: 44px;
+  }
+
+  .masthead__mark {
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+
+  .masthead__title {
+    font-family: 'Big Shoulders Display', sans-serif;
+    font-size: 4rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .masthead__sub {
+    font-size: 0.88rem;
+    color: var(--ink-3);
+    margin: 0 auto;
+    max-width: 44ch;
+    line-height: 1.55;
+  }
+
+  /* ── Connectors grid ─────────────────────────────────────────── */
+  .connectors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 580px) {
+    .connectors { grid-template-columns: 1fr; }
+    .masthead__title { font-size: 2.8rem; }
+  }
+
+  /* ── Individual connector panel ──────────────────────────────── */
+  .conn {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 26px 24px 24px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .conn--strava { border-top: 2px solid var(--strava); }
+  .conn--garmin { border-top: 2px solid var(--garmin); }
+
+  .conn__brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .conn--strava .conn__brand { color: var(--strava); }
+  .conn--garmin .conn__brand { color: var(--garmin); }
+
+  .conn p {
+    font-size: 0.875rem;
+    color: var(--ink-2);
+    margin-bottom: 20px;
+    max-width: none;
+    line-height: 1.5;
+  }
+
+  .conn .small { margin-bottom: 0; }
+
+  .conn .divider { margin: 18px 0; }
+
+  /* Test result output */
+  .test-result {
+    font-size: 0.8rem;
+    min-height: 1.15em;
+    margin-top: 9px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.03em;
+  }
+
+  /* Row of secondary actions */
+  .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="logo">🏃</div>
-<h1>RunCoach MCP</h1>
-<p>Verbinde deine Konten damit Claude deine Trainingsdaten analysieren kann.</p>
+<div class="dash">
 
-<div class="connectors-grid">
+  {# ── Masthead ── #}
+  <header class="masthead">
+    <div class="masthead__mark">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="44" height="44" rx="10" fill="#1c1d26" stroke="#2c2e3c" stroke-width="1.5"/>
+        <polyline points="3,22 11,22 16,10 24,34 29,15 34,22 41,22"
+                  stroke="#fb4a00" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <h1 class="masthead__title">RunCoach MCP</h1>
+    <p class="masthead__sub">Verbinde deine Konten damit Claude deine Trainingsdaten analysieren kann.</p>
+  </header>
 
-  {# ── Strava ──────────────────────────────────────────────────────────────── #}
-  <div class="panel">
-    <div class="section-label">Strava</div>
-    {% if connected %}
-      <div class="badge connected">&#10003; Verbunden{% if athlete_name %} als {{ athlete_name }}{% endif %}</div>
-      <p>Dein Strava-Konto ist verknüpft. Claude kann jetzt über den MCP-Server auf deine Aktivitäten zugreifen.</p>
+  {# ── Connectors ── #}
+  <div class="connectors">
 
-      <p class="small" style="margin-bottom:.75rem;">Verbindung zum MCP-Server testen:</p>
-      <button class="btn btn-secondary" id="stravaCheckBtn" onclick="runCheck('strava')">Strava testen</button>
-      <div id="stravaResult" style="margin-top:.8rem;font-size:.88rem;min-height:1.2em;"></div>
+    {# ── Strava ── #}
+    <div class="conn conn--strava">
+      <div class="conn__brand">Strava</div>
 
-      <hr class="divider">
-      <p class="small">Konto wechseln oder Zugriff widerrufen?</p>
-      <form action="/auth/strava/disconnect" method="post">
-        <button type="submit" class="btn btn-danger">Strava trennen</button>
-      </form>
-    {% else %}
-      <div class="badge disconnected">&#9679; Nicht verbunden</div>
-      <p>Klicke unten um RunCoach MCP den Lesezugriff auf deine Strava-Aktivitäten zu erlauben.</p>
-      <a href="/auth/strava/start" class="btn btn-strava">Mit Strava verbinden</a>
-      <hr class="divider">
-      <p class="small">Tokens werden mit AES-256 verschlüsselt und lokal gespeichert unter <code>~/.claude2strava/tokens.enc</code>.</p>
-    {% endif %}
-  </div>
+      {% if connected %}
+        <div class="status status--on">
+          <span class="status__dot"></span>
+          Verbunden{% if athlete_name %} &middot; {{ athlete_name }}{% endif %}
+        </div>
+        <p>Strava-Konto verknüpft. Claude kann über den MCP-Server auf deine Aktivitäten zugreifen.</p>
 
-  {# ── Garmin Connect ──────────────────────────────────────────────────────── #}
-  <div class="panel">
-    <div class="section-label">Garmin Connect</div>
-    {% if garmin_connected %}
-      <div class="badge connected">&#10003; Verbunden{% if garmin_username %} ({{ garmin_username }}){% endif %}</div>
-      <p>Dein Garmin-Konto ist verknüpft. Claude hat Zugriff auf HRV, Schlaf und tägliche Wellness-Daten.</p>
+        <button class="btn btn-ghost" id="stravaCheckBtn" onclick="runCheck('strava')">Verbindung testen</button>
+        <div class="test-result" id="stravaResult"></div>
 
-      <p class="small" style="margin-bottom:.75rem;">Session-Status prüfen:</p>
-      <button class="btn btn-secondary" id="garminCheckBtn" onclick="runCheck('garmin')">Garmin testen</button>
-      <div id="garminResult" style="margin-top:.8rem;font-size:.88rem;min-height:1.2em;"></div>
-
-      <hr class="divider">
-      <p class="small">Session abgelaufen oder Konto wechseln?</p>
-      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
-        <a href="/auth/garmin" class="btn btn-secondary" style="font-size:.85rem;padding:.5rem 1rem;">Neu verbinden</a>
-        <form action="/auth/garmin/disconnect" method="post">
-          <button type="submit" class="btn btn-danger">Garmin trennen</button>
+        <hr class="divider">
+        <p class="small" style="margin-bottom:12px;">Konto wechseln oder Zugriff widerrufen?</p>
+        <form action="/auth/strava/disconnect" method="post">
+          <button type="submit" class="btn btn-danger">Strava trennen</button>
         </form>
-      </div>
-    {% else %}
-      <div class="badge disconnected">&#9679; Nicht verbunden</div>
-      <p>Mit deinen Garmin Connect Zugangsdaten verbinden um HRV, Schlaf, Body Battery und Stress-Daten zu analysieren.</p>
-      <a href="/auth/garmin" class="btn btn-garmin">Mit Garmin verbinden</a>
-      <hr class="divider">
-      <p class="small">Session-Cookies werden verschlüsselt gespeichert unter <code>~/.claude2strava/garmin_session.enc</code>. Kein Passwort wird gespeichert.</p>
-    {% endif %}
-  </div>
+      {% else %}
+        <div class="status status--off">
+          <span class="status__dot"></span>
+          Nicht verbunden
+        </div>
+        <p>Erlaube RunCoach MCP den Lesezugriff auf deine Strava-Aktivitäten.</p>
+        <a href="/auth/strava/start" class="btn btn-strava btn--full">Mit Strava verbinden</a>
+        <hr class="divider">
+        <p class="small">Tokens werden mit AES-256 verschlüsselt lokal gespeichert unter <code>~/.claude2strava/tokens.enc</code>.</p>
+      {% endif %}
+    </div>
 
-</div>
+    {# ── Garmin ── #}
+    <div class="conn conn--garmin">
+      <div class="conn__brand">Garmin Connect</div>
+
+      {% if garmin_connected %}
+        <div class="status status--on">
+          <span class="status__dot"></span>
+          Verbunden{% if garmin_username %} &middot; {{ garmin_username }}{% endif %}
+        </div>
+        <p>Garmin-Konto verknüpft. Claude hat Zugriff auf HRV, Schlaf und tägliche Wellness-Daten.</p>
+
+        <button class="btn btn-ghost" id="garminCheckBtn" onclick="runCheck('garmin')">Verbindung testen</button>
+        <div class="test-result" id="garminResult"></div>
+
+        <hr class="divider">
+        <p class="small" style="margin-bottom:12px;">Session abgelaufen oder Konto wechseln?</p>
+        <div class="action-row">
+          <a href="/auth/garmin" class="btn btn-secondary">Neu verbinden</a>
+          <form action="/auth/garmin/disconnect" method="post">
+            <button type="submit" class="btn btn-danger">Garmin trennen</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="status status--off">
+          <span class="status__dot"></span>
+          Nicht verbunden
+        </div>
+        <p>Verbinde Garmin Connect um HRV, Schlaf, Body Battery und Stress-Daten zu analysieren.</p>
+        <a href="/auth/garmin" class="btn btn-garmin btn--full">Mit Garmin verbinden</a>
+        <hr class="divider">
+        <p class="small">Session-Cookies werden verschlüsselt gespeichert unter <code>~/.claude2strava/garmin_session.enc</code>. Kein Passwort wird gespeichert.</p>
+      {% endif %}
+    </div>
+
+  </div>{# /connectors #}
+</div>{# /dash #}
 
 <script>
   async function runCheck(provider) {
@@ -69,25 +201,23 @@
     btn.disabled = true;
     btn.textContent = 'Prüfe…';
     out.textContent = '';
-    out.style.color = '#555';
     try {
-      const endpoint = provider === 'garmin' ? '/api/check-garmin' : '/api/check';
-      const res = await fetch(endpoint);
+      const res  = await fetch(provider === 'garmin' ? '/api/check-garmin' : '/api/check');
       const data = await res.json();
       if (data.ok) {
-        out.style.color = '#1a7a4a';
         const who = data.athlete || data.username || '';
-        out.textContent = '✓ Verbindung OK' + (who ? ` — ${who}` : '');
+        out.style.color = 'var(--green)';
+        out.textContent  = '✓ OK' + (who ? '  —  ' + who : '');
       } else {
-        out.style.color = '#c0392b';
-        out.textContent = '✗ ' + data.error;
+        out.style.color = 'var(--red)';
+        out.textContent  = '✗ ' + data.error;
       }
     } catch (e) {
-      out.style.color = '#c0392b';
-      out.textContent = '✗ Anfrage fehlgeschlagen: ' + e.message;
+      out.style.color = 'var(--red)';
+      out.textContent  = '✗ Anfrage fehlgeschlagen';
     }
     btn.disabled = false;
-    btn.textContent = provider === 'garmin' ? 'Garmin testen' : 'Strava testen';
+    btn.textContent = provider === 'garmin' ? 'Verbindung testen' : 'Verbindung testen';
   }
 </script>
 {% endblock %}
