@@ -11,7 +11,7 @@
     :root {
       --bg:        oklch(11%  0.008 250);
       --bg-panel:  oklch(16%  0.011 250);
-      --bg-raise:  oklch(20%  0.013 250);
+      --bg-raise:  oklch(21%  0.013 250);
       --border:    oklch(23%  0.014 250);
       --border-sub:oklch(18%  0.010 250);
 
@@ -24,13 +24,15 @@
       --garmin:    oklch(57% 0.18 240);
       --garmin-bg: oklch(20% 0.07 240);
 
-      --green:     oklch(67% 0.19 145);
-      --green-bg:  oklch(19% 0.07 145);
-      --red:       oklch(58% 0.21  25);
-      --red-bg:    oklch(20% 0.08  25);
+      --green:    oklch(67% 0.19 145);
+      --green-bg: oklch(19% 0.07 145);
+      --red:      oklch(58% 0.21  25);
+      --red-bg:   oklch(20% 0.08  25);
 
       --r:    10px;
       --r-lg: 14px;
+
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,20 +41,20 @@
       font-family: 'Barlow', -apple-system, sans-serif;
       background: var(--bg);
       color: var(--ink);
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px 16px;
+      padding: 28px 16px;
       line-height: 1.5;
     }
 
-    /* ── Typography ─────────────────────────────────────────── */
+    /* ── Typography ─────────────────────────────────────────────── */
     h1 {
       font-family: 'Big Shoulders Display', sans-serif;
-      font-size: 1.9rem;
+      font-size: 2rem;
       font-weight: 700;
-      line-height: 1.1;
+      line-height: 1.05;
       margin-bottom: 10px;
     }
 
@@ -64,7 +66,7 @@
 
     .eyebrow {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.67rem;
       font-weight: 700;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -87,11 +89,11 @@
       font-family: ui-monospace, 'Cascadia Code', monospace;
     }
 
-    /* ── Single-page wrap (login, callback flows) ────────────── */
+    /* ── Single-page wrap ────────────────────────────────────────── */
     .page-wrap {
       width: 100%;
       max-width: 400px;
-      animation: fade-up 0.25s ease-out both;
+      animation: fade-up 0.25s var(--ease-out) both;
     }
 
     .box {
@@ -102,13 +104,13 @@
       text-align: center;
     }
 
-    /* ── Status indicators ───────────────────────────────────── */
+    /* ── Status indicators ───────────────────────────────────────── */
     .status {
       display: inline-flex;
       align-items: center;
       gap: 7px;
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.77rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -121,12 +123,17 @@
       flex-shrink: 0;
     }
     .status--on  { color: var(--green); }
-    .status--on  .status__dot { background: var(--green); box-shadow: 0 0 6px oklch(67% 0.19 145 / 0.55); }
+    .status--on  .status__dot {
+      background: var(--green);
+      animation: led-pulse 2.8s ease-in-out infinite;
+    }
     .status--off { color: var(--ink-3); }
     .status--off .status__dot { background: var(--ink-3); }
 
-    /* ── Buttons ─────────────────────────────────────────────── */
+    /* ── Buttons ─────────────────────────────────────────────────── */
     .btn {
+      position: relative;
+      overflow: hidden;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -140,13 +147,31 @@
       cursor: pointer;
       border: none;
       text-decoration: none;
-      transition: opacity 0.15s, transform 0.1s;
       line-height: 1;
       white-space: nowrap;
+      transition:
+        transform 0.2s var(--ease-out),
+        filter  0.2s ease,
+        opacity 0.15s ease,
+        border-color 0.15s ease,
+        background 0.15s ease;
     }
-    .btn:hover:not(:disabled) { opacity: 0.80; }
-    .btn:active:not(:disabled) { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.4; cursor: default; }
+    /* shimmer on all filled buttons */
+    .btn-strava::after,
+    .btn-garmin::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.14) 50%, transparent 100%);
+      transform: translateX(-110%);
+      transition: transform 0.5s var(--ease-out);
+    }
+    .btn-strava:hover::after,
+    .btn-garmin:hover::after { transform: translateX(110%); }
+
+    .btn:hover:not(:disabled)  { transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+    .btn:disabled              { opacity: 0.38; cursor: default; }
     .btn--full { width: 100%; }
 
     .btn-strava   { background: var(--strava);  color: #fff; }
@@ -156,7 +181,11 @@
       color: var(--ink-2);
       border: 1px solid var(--border);
     }
-    .btn-ghost:hover { opacity: 1; border-color: oklch(33% 0.016 250); color: var(--ink); }
+    .btn-ghost:hover {
+      transform: translateY(-1px);
+      border-color: oklch(33% 0.016 250);
+      color: var(--ink);
+    }
     .btn-secondary {
       background: var(--bg-raise);
       color: var(--ink-2);
@@ -166,23 +195,23 @@
       background: transparent;
       color: var(--red);
       border: 1px solid oklch(28% 0.10 25);
-      font-size: 0.76rem;
+      font-size: 0.75rem;
       padding: 7px 14px;
     }
-    .btn-danger:hover { opacity: 1; background: var(--red-bg); }
+    .btn-danger:hover { background: var(--red-bg); border-color: var(--red); transform: translateY(-1px); }
 
-    /* ── Divider ─────────────────────────────────────────────── */
+    /* ── Divider ─────────────────────────────────────────────────── */
     .divider {
       border: none;
       border-top: 1px solid var(--border-sub);
       margin: 20px 0;
     }
 
-    /* ── Icon states ─────────────────────────────────────────── */
-    .icon-ok  { color: var(--green); font-size: 2.2rem; display: block; margin-bottom: 14px; }
-    .icon-err { color: var(--red);   font-size: 2.2rem; display: block; margin-bottom: 14px; }
+    /* ── Status icons (callback pages) ──────────────────────────── */
+    .icon-ok  { color: var(--green); width: 2.4rem; height: 2.4rem; display: block; margin: 0 auto 18px; }
+    .icon-err { color: var(--red);   width: 2.4rem; height: 2.4rem; display: block; margin: 0 auto 18px; }
 
-    /* ── Error banner ────────────────────────────────────────── */
+    /* ── Error banner ────────────────────────────────────────────── */
     .error-banner {
       background: var(--red-bg);
       border: 1px solid oklch(30% 0.11 25);
@@ -193,14 +222,14 @@
       margin-bottom: 18px;
     }
 
-    /* ── Form elements ───────────────────────────────────────── */
+    /* ── Form elements ───────────────────────────────────────────── */
     .form-field   { margin-bottom: 18px; text-align: left; }
     .form-label {
       display: block;
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.67rem;
       font-weight: 700;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.13em;
       text-transform: uppercase;
       color: var(--ink-3);
       margin-bottom: 7px;
@@ -215,15 +244,23 @@
       font-size: 0.93rem;
       color: var(--ink);
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s ease;
     }
     .form-input:focus { border-color: oklch(44% 0.022 250); }
     .form-input::placeholder { color: var(--ink-3); }
 
-    /* ── Entrance animation ──────────────────────────────────── */
+    /* ── Keyframes ───────────────────────────────────────────────── */
     @keyframes fade-up {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes led-pulse {
+      0%, 100% { box-shadow: 0 0 3px oklch(67% 0.19 145 / 0.45); }
+      50%       { box-shadow: 0 0 7px oklch(67% 0.19 145 / 0.75),
+                              0 0 14px oklch(67% 0.19 145 / 0.25); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
   </style>
   {% block head %}{% endblock %}

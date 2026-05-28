@@ -5,7 +5,9 @@
 <div class="page-wrap">
   <div class="box">
     {% if success %}
-      <span class="icon-ok">✓</span>
+      <svg class="icon-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
       <h1>Connected</h1>
       {% if athlete_name %}
         <p>Welcome, <strong style="color:var(--ink);">{{ athlete_name }}</strong>. Your Strava account is now linked.</p>
@@ -16,7 +18,10 @@
       <p class="small" style="margin-bottom:16px;">You can close this window. Restart Claude Desktop if the MCP server was already running.</p>
       <a href="/" class="btn btn-secondary btn--full">Back to dashboard</a>
     {% else %}
-      <span class="icon-err">✗</span>
+      <svg class="icon-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
       <h1>Connection failed</h1>
       <p>{{ message }}</p>
       <hr class="divider">
