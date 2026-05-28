@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Garmin Connect verbinden{% endblock %}
+{% block content %}
+<div class="logo">⌚</div>
+<h1>Garmin Connect</h1>
+<p>Gib deine Garmin-Zugangsdaten ein. Das Passwort wird <strong>nicht</strong> gespeichert — nur die Session-Cookies nach erfolgreichem Login.</p>
+
+{% if error %}
+  <div class="badge disconnected" style="margin-bottom:1rem;">{{ error }}</div>
+{% endif %}
+
+<form action="/auth/garmin/connect" method="post" style="text-align:left;">
+  <div style="margin-bottom:1rem;">
+    <label style="display:block;font-size:.85rem;font-weight:600;color:#333;margin-bottom:.4rem;">E-Mail</label>
+    <input type="email" name="email" required autocomplete="email"
+           style="width:100%;padding:.6rem .8rem;border:1.5px solid #ddd;border-radius:7px;font-size:.95rem;outline:none;"
+           placeholder="deine@email.de">
+  </div>
+  <div style="margin-bottom:1.5rem;">
+    <label style="display:block;font-size:.85rem;font-weight:600;color:#333;margin-bottom:.4rem;">Passwort</label>
+    <input type="password" name="password" required autocomplete="current-password"
+           style="width:100%;padding:.6rem .8rem;border:1.5px solid #ddd;border-radius:7px;font-size:.95rem;outline:none;"
+           placeholder="••••••••">
+  </div>
+  <button type="submit" class="btn btn-garmin" style="width:100%;">Verbinden</button>
+</form>
+
+<hr class="divider">
+<a href="/" class="small" style="color:#999;text-decoration:none;">← Zurück zum Dashboard</a>
+{% endblock %}

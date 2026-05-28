@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude2Strava — App Icon</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #161210;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 64px;
+      padding: 64px 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .eyebrow {
+      color: #FC4C02;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main icon display ───────────────────────────── */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .rounded {
+      border-radius: 22.37%;   /* iOS app icon radius */
+      overflow: hidden;
+      display: block;
+      line-height: 0;
+    }
+
+    /* ── Size row ────────────────────────────────────── */
+    .size-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    .size-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .size-label {
+      color: #3d2e28;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    /* ── Light bg preview ───────────────────────────── */
+    .contexts {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .ctx {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ctx-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .bg-light { background: #f4f4f4; padding: 20px; border-radius: 16px; }
+    .bg-white  { background: #ffffff; padding: 20px; border-radius: 16px; }
+
+    .ctx.on-light .ctx-label { color: #aaa; }
+    .ctx.on-dark  .ctx-label { color: #3d2e28; }
+
+    /* ── Footer ─────────────────────────────────────── */
+    footer {
+      color: #3a2820;
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.8;
+      max-width: 380px;
+    }
+
+    footer code {
+      color: #FC4C02;
+      font-family: "SF Mono", "Fira Mono", monospace;
+      font-size: 10px;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: #2a1e18;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="eyebrow">Claude2Strava · App Icon</span>
+  </header>
+
+  <!-- ── Main 512px display ─────────────────────────── -->
+  <div class="hero">
+    <div class="rounded">
+      <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" fill="#0f0804"/>
+        <g stroke="#FC4C02" stroke-width="0.75" opacity="0.042">
+          <line x1="0" y1="128" x2="512" y2="128"/>
+          <line x1="0" y1="256" x2="512" y2="256"/>
+          <line x1="0" y1="384" x2="512" y2="384"/>
+          <line x1="128" y1="0" x2="128" y2="512"/>
+          <line x1="256" y1="0" x2="256" y2="512"/>
+          <line x1="384" y1="0" x2="384" y2="512"/>
+        </g>
+        <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+        <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+          <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+          <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+          <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+          <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+        </g>
+        <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+        <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+        <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+        <circle cx="255" cy="248" r="28" fill="none" stroke="#FC4C02" stroke-width="2" opacity="0.28"/>
+        <circle cx="388" cy="184" r="5.5" fill="#FC4C02" opacity="0.55"/>
+        <circle cx="420" cy="166" r="4"   fill="#FC4C02" opacity="0.34"/>
+        <circle cx="450" cy="152" r="3"   fill="#FC4C02" opacity="0.18"/>
+        <path d="M 388 184 L 420 166 L 450 152" stroke="#FC4C02" stroke-width="1.5" fill="none" opacity="0.14" stroke-linecap="round"/>
+        <polyline points="56,452 126,452 148,431 168,473 188,425 208,476 228,452 456,452"
+          stroke="#FC4C02" stroke-width="2.5" fill="none" opacity="0.38"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="456" cy="452" r="4.5" fill="#FC4C02" opacity="0.5"/>
+        <circle cx="56"  cy="452" r="3"   fill="#FC4C02" opacity="0.22"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Smaller sizes ──────────────────────────────── -->
+  <div class="size-row">
+
+    <!-- 256 -->
+    <div class="size-item">
+      <div class="rounded">
+        <svg width="256" height="256" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <rect width="512" height="512" fill="#0f0804"/>
+          <g stroke="#FC4C02" stroke-width="0.75" opacity="0.042">
+            <line x1="0" y1="128" x2="512" y2="128"/><line x1="0" y1="256" x2="512" y2="256"/>
+            <line x1="0" y1="384" x2="512" y2="384"/><line x1="128" y1="0" x2="128" y2="512"/>
+            <line x1="256" y1="0" x2="256" y2="512"/><line x1="384" y1="0" x2="384" y2="512"/>
+          </g>
+          <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+          <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+            <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+            <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+            <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+            <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+          </g>
+          <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+          <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+          <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+          <circle cx="255" cy="248" r="28" fill="none" stroke="#FC4C02" stroke-width="2" opacity="0.28"/>
+          <circle cx="388" cy="184" r="5.5" fill="#FC4C02" opacity="0.55"/>
+          <circle cx="420" cy="166" r="4"   fill="#FC4C02" opacity="0.34"/>
+          <circle cx="450" cy="152" r="3"   fill="#FC4C02" opacity="0.18"/>
+          <polyline points="56,452 126,452 148,431 168,473 188,425 208,476 228,452 456,452"
+            stroke="#FC4C02" stroke-width="2.5" fill="none" opacity="0.38"
+            stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="456" cy="452" r="4.5" fill="#FC4C02" opacity="0.5"/>
+        </svg>
+      </div>
+      <span class="size-label">256</span>
+    </div>
+
+    <!-- 128 -->
+    <div class="size-item">
+      <div class="rounded">
+        <svg width="128" height="128" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <rect width="512" height="512" fill="#0f0804"/>
+          <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+          <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+            <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+            <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+            <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+            <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+          </g>
+          <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+          <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+          <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+          <circle cx="255" cy="248" r="28" fill="none" stroke="#FC4C02" stroke-width="2" opacity="0.28"/>
+          <circle cx="388" cy="184" r="5.5" fill="#FC4C02" opacity="0.55"/>
+          <polyline points="56,452 126,452 148,431 168,473 188,425 208,476 228,452 456,452"
+            stroke="#FC4C02" stroke-width="2.5" fill="none" opacity="0.38"
+            stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="456" cy="452" r="4.5" fill="#FC4C02" opacity="0.5"/>
+        </svg>
+      </div>
+      <span class="size-label">128</span>
+    </div>
+
+    <!-- 64 -->
+    <div class="size-item">
+      <div class="rounded">
+        <svg width="64" height="64" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <rect width="512" height="512" fill="#0f0804"/>
+          <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+          <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+            <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+            <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+            <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+            <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+          </g>
+          <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+          <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+          <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+          <polyline points="56,452 126,452 148,431 168,473 188,425 208,476 228,452 456,452"
+            stroke="#FC4C02" stroke-width="2.5" fill="none" opacity="0.38"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="size-label">64</span>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Context previews ───────────────────────────── -->
+  <div class="contexts">
+
+    <!-- On light grey -->
+    <div class="ctx on-light">
+      <div class="bg-light">
+        <div class="rounded">
+          <svg width="80" height="80" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <rect width="512" height="512" fill="#0f0804"/>
+            <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+            <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+              <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+              <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+              <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+              <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+            </g>
+            <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+            <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+            <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+          </svg>
+        </div>
+      </div>
+      <span class="ctx-label" style="color:#555">Light bg</span>
+    </div>
+
+    <!-- On white -->
+    <div class="ctx on-light">
+      <div class="bg-white">
+        <div class="rounded">
+          <svg width="80" height="80" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <rect width="512" height="512" fill="#0f0804"/>
+            <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+            <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+              <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+              <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+              <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+              <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+            </g>
+            <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+            <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+            <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+          </svg>
+        </div>
+      </div>
+      <span class="ctx-label" style="color:#555">White bg</span>
+    </div>
+
+    <!-- On dark -->
+    <div class="ctx on-dark">
+      <div style="background:#0f0804; padding:20px; border-radius:16px;">
+        <div class="rounded">
+          <svg width="80" height="80" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <rect width="512" height="512" fill="#0f0804"/>
+            <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+            <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+              <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+              <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+              <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+              <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+            </g>
+            <circle cx="281" cy="170" r="12" fill="#FC4C02"/>
+            <circle cx="255" cy="248" r="14" fill="#FC4C02"/>
+            <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>
+          </svg>
+        </div>
+      </div>
+      <span class="ctx-label" style="color:#3d2e28">Dark bg</span>
+    </div>
+
+  </div>
+
+  <footer>
+    Right-click the large icon above → Save Image As<br>
+    Or use <code>assets/icon.svg</code> directly in Strava API app registration<br>
+    <br>
+    <span style="opacity:.5">Strava requires a square image — any size works, 480×480+ recommended</span>
+  </footer>
+
+</body>
+</html>

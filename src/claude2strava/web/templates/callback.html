@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Claude2Strava — {% if success %}Connected!{% else %}Error{% endif %}{% endblock %}
+{% block content %}
+{% if success %}
+  <span class="icon-ok">&#10003;</span>
+  <h1>Connected!</h1>
+  {% if athlete_name %}<p>Welcome, <strong>{{ athlete_name }}</strong>.</p>{% endif %}
+  <p>Your Strava account is now linked. Claude can access your activities via the MCP server.</p>
+  <hr class="divider">
+  <p class="small">You can close this window. Restart Claude Desktop if the MCP server was already running.</p>
+  <a href="/" class="btn btn-secondary">Back to dashboard</a>
+{% else %}
+  <span class="icon-err">&#10007;</span>
+  <h1>Connection failed</h1>
+  <p>{{ message }}</p>
+  <hr class="divider">
+  <a href="/" class="btn btn-secondary">Try again</a>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Garmin 2FA Verifizierung{% endblock %}
+{% block content %}
+<div class="logo">🔐</div>
+<h1>Zwei-Faktor-Authentifizierung</h1>
+<p>Garmin hat eine 2FA-Prüfung ausgelöst. Gib den Code aus deiner Authenticator-App oder deiner E-Mail ein.</p>
+
+{% if error %}
+  <div class="badge disconnected" style="margin-bottom:1rem;">{{ error }}</div>
+{% endif %}
+
+<form action="/auth/garmin/verify" method="post">
+  <div style="margin-bottom:1.5rem;">
+    <label style="display:block;font-size:.85rem;font-weight:600;color:#333;margin-bottom:.4rem;">Bestätigungscode</label>
+    <input type="text" name="mfa_code" required autocomplete="one-time-code"
+           inputmode="numeric" pattern="[0-9]*" maxlength="8"
+           style="width:100%;padding:.6rem .8rem;border:1.5px solid #ddd;border-radius:7px;font-size:1.2rem;text-align:center;letter-spacing:.2em;outline:none;"
+           placeholder="123456">
+  </div>
+  <button type="submit" class="btn btn-garmin" style="width:100%;">Bestätigen</button>
+</form>
+
+<hr class="divider">
+<a href="/auth/garmin" class="small" style="color:#999;text-decoration:none;">← Neu einloggen</a>
+{% endblock %}

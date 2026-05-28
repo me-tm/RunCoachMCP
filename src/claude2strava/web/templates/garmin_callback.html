@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Garmin Connect — {% if success %}Verbunden{% else %}Fehler{% endif %}{% endblock %}
+{% block content %}
+{% if success %}
+  <span class="icon-ok">✓</span>
+  <h1>Garmin verbunden!</h1>
+  <p>Session gespeichert für <strong>{{ username }}</strong>. Claude kann jetzt auf deine HRV-, Schlaf- und Wellness-Daten zugreifen.</p>
+  <a href="/" class="btn btn-garmin">Zum Dashboard</a>
+{% else %}
+  <span class="icon-err">✗</span>
+  <h1>Verbindung fehlgeschlagen</h1>
+  <p>{{ message }}</p>
+  <a href="/auth/garmin" class="btn btn-secondary">Erneut versuchen</a>
+{% endif %}
+{% endblock %}

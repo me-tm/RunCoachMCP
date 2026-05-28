@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Claude2Strava — Dashboard{% endblock %}
+{% block content %}
+<div class="logo">🚴</div>
+<h1>Claude2Strava</h1>
+<p>Verbinde deine Konten damit Claude deine Trainingsdaten analysieren kann.</p>
+
+{# ── Strava ─────────────────────────────────────────────────────────────── #}
+<div class="section-label">Strava</div>
+
+{% if connected %}
+  <div class="badge connected">&#10003; Verbunden{% if athlete_name %} als {{ athlete_name }}{% endif %}</div>
+  <p>Dein Strava-Konto ist verknüpft. Claude kann jetzt über den MCP-Server auf deine Aktivitäten zugreifen.</p>
+
+  <p class="small" style="margin-bottom:.75rem;">Verbindung zum MCP-Server testen:</p>
+  <button class="btn btn-secondary" id="stravaCheckBtn" onclick="runCheck('strava')">Strava testen</button>
+  <div id="stravaResult" style="margin-top:.8rem;font-size:.88rem;min-height:1.2em;"></div>
+
+  <hr class="divider">
+  <p class="small">Konto wechseln oder Zugriff widerrufen?</p>
+  <form action="/auth/strava/disconnect" method="post">
+    <button type="submit" class="btn btn-danger">Strava trennen</button>
+  </form>
+{% else %}
+  <div class="badge disconnected">&#9679; Nicht verbunden</div>
+  <p>Klicke unten um Claude2Strava den Lesezugriff auf deine Strava-Aktivitäten zu erlauben.</p>
+  <a href="/auth/strava/start" class="btn btn-strava">Mit Strava verbinden</a>
+  <hr class="divider">
+  <p class="small">Tokens werden mit AES-256 verschlüsselt und lokal gespeichert unter <code>~/.claude2strava/tokens.enc</code>.</p>
+{% endif %}
+
+{# ── Garmin Connect ─────────────────────────────────────────────────────── #}
+<hr class="divider" style="margin-top:2rem;">
+<div class="section-label">Garmin Connect</div>
+
+{% if garmin_connected %}
+  <div class="badge connected">&#10003; Verbunden{% if garmin_username %} ({{ garmin_username }}){% endif %}</div>
+  <p>Dein Garmin-Konto ist verknüpft. Claude hat Zugriff auf HRV, Schlaf und tägliche Wellness-Daten.</p>
+
+  <p class="small" style="margin-bottom:.75rem;">Session-Status prüfen:</p>
+  <button class="btn btn-secondary" id="garminCheckBtn" onclick="runCheck('garmin')">Garmin testen</button>
+  <div id="garminResult" style="margin-top:.8rem;font-size:.88rem;min-height:1.2em;"></div>
+
+  <hr class="divider">
+  <p class="small">Session abgelaufen oder Konto wechseln?</p>
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+    <a href="/auth/garmin" class="btn btn-secondary" style="font-size:.85rem;padding:.5rem 1rem;">Neu verbinden</a>
+    <form action="/auth/garmin/disconnect" method="post">
+      <button type="submit" class="btn btn-danger">Garmin trennen</button>
+    </form>
+  </div>
+{% else %}
+  <div class="badge disconnected">&#9679; Nicht verbunden</div>
+  <p>Mit deinen Garmin Connect Zugangsdaten verbinden um HRV, Schlaf, Body Battery und Stress-Daten zu analysieren.</p>
+  <a href="/auth/garmin" class="btn btn-garmin">Mit Garmin verbinden</a>
+  <hr class="divider">
+  <p class="small">Session-Cookies werden verschlüsselt gespeichert unter <code>~/.claude2strava/garmin_session.enc</code>. Kein Passwort wird gespeichert.</p>
+{% endif %}
+
+<script>
+  async function runCheck(provider) {
+    const btn = document.getElementById(provider + 'CheckBtn');
+    const out = document.getElementById(provider + 'Result');
+    btn.disabled = true;
+    btn.textContent = 'Prüfe…';
+    out.textContent = '';
+    out.style.color = '#555';
+    try {
+      const endpoint = provider === 'garmin' ? '/api/check-garmin' : '/api/check';
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      if (data.ok) {
+        out.style.color = '#1a7a4a';
+        const who = data.athlete || data.username || '';
+        out.textContent = '✓ Verbindung OK' + (who ? ` — ${who}` : '');
+      } else {
+        out.style.color = '#c0392b';
+        out.textContent = '✗ ' + data.error;
+      }
+    } catch (e) {
+      out.style.color = '#c0392b';
+      out.textContent = '✗ Anfrage fehlgeschlagen: ' + e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = provider === 'garmin' ? 'Garmin testen' : 'Strava testen';
+  }
+</script>
+{% endblock %}

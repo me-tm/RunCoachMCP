@@ -1,0 +1,90 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background: very dark warm black (tinted toward Strava orange) -->
+  <rect width="512" height="512" fill="#0f0804"/>
+
+  <!-- Subtle coordinate grid — very low opacity, orange-tinted -->
+  <g stroke="#FC4C02" stroke-width="0.75" opacity="0.042">
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+    <line x1="128" y1="0" x2="128" y2="512"/>
+    <line x1="256" y1="0" x2="256" y2="512"/>
+    <line x1="384" y1="0" x2="384" y2="512"/>
+  </g>
+
+  <!--
+    RUNNER FIGURE — side view, running to the right, mid-stride.
+    Drawn as bold round-capped strokes with circuit nodes at key joints.
+
+    Anatomy:
+      Head         cx=310 cy=90 r=30
+      Neck base    (297, 118)
+      Shoulder     (281, 170)  ← 40% down the torso
+      Hip          (255, 248)
+      Forward arm  shoulder → right curve → (355, 205)
+      Back arm     shoulder → left → (205, 152)
+      Front leg    hip → raised knee (325, 285) → foot (304, 378)
+      Back leg     hip → trailing foot (170, 375)
+  -->
+
+  <!-- Head -->
+  <circle cx="310" cy="90" r="30" fill="#FC4C02"/>
+
+  <!-- Body strokes -->
+  <g stroke="#FC4C02" stroke-linecap="round" stroke-linejoin="round" fill="none">
+
+    <!-- Torso: neck base → hip (forward lean = goes left+down) -->
+    <line x1="297" y1="118" x2="255" y2="248" stroke-width="20"/>
+
+    <!-- Forward arm (swings toward direction of travel) -->
+    <path d="M 281 170 C 308 177, 336 190, 355 206" stroke-width="18"/>
+
+    <!-- Back arm (swings rearward) -->
+    <line x1="281" y1="170" x2="204" y2="151" stroke-width="18"/>
+
+    <!-- Front leg: hip → raised knee → lower leg/foot -->
+    <path d="M 255 248 L 325 286 L 303 379" stroke-width="18"/>
+
+    <!-- Back leg: hip → trailing foot -->
+    <line x1="255" y1="248" x2="170" y2="376" stroke-width="18"/>
+
+  </g>
+
+  <!-- Circuit-style joint nodes -->
+  <circle cx="281" cy="170" r="12" fill="#FC4C02"/>  <!-- shoulder -->
+  <circle cx="255" cy="248" r="14" fill="#FC4C02"/>  <!-- hip -->
+  <circle cx="325" cy="286" r="9"  fill="#FC4C02"/>  <!-- front knee -->
+
+  <!-- Precision ring at hip — suggests GPS lock / data node -->
+  <circle cx="255" cy="248" r="28" fill="none" stroke="#FC4C02" stroke-width="2" opacity="0.28"/>
+
+  <!--
+    GPS route waypoints ahead of the runner.
+    Three dots decreasing in size and opacity — the route the runner is following.
+  -->
+  <circle cx="388" cy="184" r="5.5" fill="#FC4C02" opacity="0.55"/>
+  <circle cx="420" cy="166" r="4"   fill="#FC4C02" opacity="0.34"/>
+  <circle cx="450" cy="152" r="3"   fill="#FC4C02" opacity="0.18"/>
+
+  <!-- Connecting trace between waypoints (very subtle) -->
+  <path d="M 388 184 L 420 166 L 450 152" stroke="#FC4C02" stroke-width="1.5"
+        fill="none" opacity="0.14" stroke-linecap="round"/>
+
+  <!--
+    EKG / biometric data line at the bottom.
+    Suggests heart rate or elevation profile being recorded.
+  -->
+  <polyline
+    points="56,452 126,452 148,431 168,473 188,425 208,476 228,452 456,452"
+    stroke="#FC4C02" stroke-width="2.5" fill="none" opacity="0.38"
+    stroke-linecap="round" stroke-linejoin="round"
+  />
+
+  <!-- Active recording dot at end of EKG line -->
+  <circle cx="456" cy="452" r="4.5" fill="#FC4C02" opacity="0.5"/>
+
+  <!-- Faint start marker -->
+  <circle cx="56" cy="452" r="3" fill="#FC4C02" opacity="0.22"/>
+
+</svg>

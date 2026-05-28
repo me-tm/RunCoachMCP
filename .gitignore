@@ -1,0 +1,30 @@
+# Environment — never commit secrets
+.env
+.env.*
+!.env.example
+
+# Encrypted token storage (lives in ~/.claude2strava/ anyway, not here)
+*.enc
+tokens/
+.claude2strava/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.ruff_cache/
+.mypy_cache/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
