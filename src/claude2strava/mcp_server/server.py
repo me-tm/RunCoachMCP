@@ -1,10 +1,10 @@
 """
-MCP server exposing Strava workout data to Claude.
+RunCoach MCP server — exposes Strava and Garmin Connect data to Claude.
 
 Add to claude_desktop_config.json:
   {
     "mcpServers": {
-      "strava": {
+      "runcoach": {
         "command": "uv",
         "args": ["run", "python", "-m", "claude2strava.mcp_server"],
         "cwd": "/path/to/Claude2Strava"
@@ -26,7 +26,7 @@ from ..garmin.session_store import GarminNotConnectedError, GarminSessionExpired
 from ..strava.client import StravaClient
 from ..token_store import TokenNotFoundError, TokenStore
 
-mcp = FastMCP("Claude2Strava", instructions=(
+mcp = FastMCP("RunCoach MCP", instructions=(
     "Access the user's Strava workout history and Garmin Connect wellness data. "
     "Strava: use list_activities, get_activity, get_activity_streams, get_athlete_stats. "
     "Garmin: use get_garmin_sleep, get_garmin_hrv, get_garmin_daily_stats, "
