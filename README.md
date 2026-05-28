@@ -1,6 +1,6 @@
-# Claude2Strava
+# RunCoachMCP
 
-Connect Claude to your Strava workout history via MCP. Ask Claude about your training load, race performance, heart rate trends, segment PRs, and more.
+Connect Claude to your Strava workout history and Garmin Connect wellness data via MCP. Ask Claude about your training load, race performance, heart rate trends, segment PRs, sleep quality, HRV, body battery, and more.
 
 ## Architecture
 
@@ -14,14 +14,24 @@ Connect Claude to your Strava workout history via MCP. Ask Claude about your tra
   ~/.claude2strava/
     tokens.enc (AES-256)
 
-┌─────────────────┐     MCP protocol     ┌─────────────┐
-│  Claude Desktop │ ───────────────────▶  │  MCP server │
-│                 │ ◀─────────────────── │  (7 tools)  │
-└─────────────────┘     JSON results      └─────────────┘
+┌─────────────────┐   email + password    ┌─────────────┐
+│  localhost:8080  │ ───────────────────▶  │   Garmin    │
+│  (FastAPI web)  │ ◀─────────────────── │   Connect   │
+└─────────────────┘   session tokens      └─────────────┘
+         │ save encrypted
+         ▼
+  ~/.claude2strava/
+    garmin_session.enc (AES-256)
+
+┌─────────────────┐     MCP protocol     ┌──────────────┐
+│  Claude Desktop │ ───────────────────▶  │  MCP server  │
+│                 │ ◀─────────────────── │  (13 tools)  │
+└─────────────────┘     JSON results      └──────────────┘
                                  │ reads tokens
                                  ▼
                           ~/.claude2strava/
                             tokens.enc
+                            garmin_session.enc
 ```
 
 ## Security
@@ -29,11 +39,13 @@ Connect Claude to your Strava workout history via MCP. Ask Claude about your tra
 | Concern | How it's handled |
 |---|---|
 | Tokens on disk | AES-256-GCM (Fernet) encrypted, file mode `0600` |
-| Token storage location | `~/.claude2strava/tokens.enc` — outside the repo |
+| Token storage location | `~/.claude2strava/` — outside the repo |
 | CSRF on OAuth callback | Per-request `state` UUID in a signed HttpOnly cookie |
-| Code interception | PKCE (`S256`) added to every OAuth flow |
+| Code interception | PKCE (`S256`) added to every Strava OAuth flow |
 | Secrets in logs | `Authorization` headers never logged |
-| Token expiry | Client auto-refreshes 60 s before expiry |
+| Token expiry | Strava client auto-refreshes 60 s before expiry |
+| Garmin password | Never stored — only bearer tokens (di_token + refresh) are persisted |
+| Garmin 2FA | MFA state held in server memory only; opaque session ID in HttpOnly cookie |
 | Local-only web UI | FastAPI binds to `127.0.0.1` only |
 
 Your Strava credentials (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`) and encryption key live in `.env` which is excluded by `.gitignore`.
@@ -42,6 +54,7 @@ Your Strava credentials (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`) and encrypt
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) — `brew install uv`
 - A Strava account
+- A Garmin Connect account (optional — only needed for sleep/HRV/recovery tools)
 - [Claude Desktop](https://claude.ai/download)
 
 ## Setup
@@ -89,7 +102,15 @@ uv run python -m claude2strava.web.app
 
 Open [http://localhost:8080](http://localhost:8080) and click **Connect with Strava**. After authorizing, you'll see a success page. You can close the browser and stop the web server — you only need to do this once (or if you revoke access).
 
-### 5. Configure Claude Desktop
+### 5. Connect your Garmin account (optional)
+
+With the web UI running, click **Connect Garmin** on the dashboard (or go to [http://localhost:8080/auth/garmin](http://localhost:8080/auth/garmin)). Enter your Garmin Connect email and password.
+
+If your account has **two-factor authentication** enabled, you'll be prompted for the code sent to your email or authenticator app. Your Garmin password is never stored — only the session bearer tokens are encrypted and saved to `~/.claude2strava/garmin_session.enc`.
+
+Garmin sessions last approximately 30 days. If a session expires, reconnect through the dashboard.
+
+### 6. Configure Claude Desktop
 
 Add the MCP server to your Claude Desktop config file:
 
@@ -107,9 +128,11 @@ Add the MCP server to your Claude Desktop config file:
 }
 ```
 
-Restart Claude Desktop. The Strava MCP server will start automatically when Claude launches.
+Restart Claude Desktop. The MCP server will start automatically when Claude launches.
 
 ## Available MCP Tools
+
+### Strava
 
 | Tool | What it does |
 |---|---|
@@ -120,6 +143,17 @@ Restart Claude Desktop. The Strava MCP server will start automatically when Clau
 | `get_athlete_stats` | YTD / all-time / recent totals for run/ride/swim |
 | `get_athlete_zones` | Heart rate and power training zones |
 | `get_starred_segments` | Your starred Strava segments |
+
+### Garmin Connect
+
+| Tool | What it does |
+|---|---|
+| `check_garmin_connection` | Verify Garmin is connected, show display name |
+| `get_garmin_sleep` | Sleep stages (deep/light/REM/awake), HRV, SpO2, respiration for a date |
+| `get_garmin_hrv` | Overnight HRV average, weekly avg, status, and 5-min sample readings |
+| `get_garmin_daily_stats` | Steps, resting HR, body battery, stress, calories for a date |
+| `get_garmin_body_battery` | Body battery (0–100) charged/drained across a date range |
+| `get_garmin_sleep_range` | Night-by-night sleep summary across a date range |
 
 ## Example Claude prompts
 
@@ -133,6 +167,12 @@ What's my average moving time for runs over 20km?
 Analyse my heart rate data from my last long run and identify any cardiac drift.
 
 Which of my starred segments have I improved on most in the last 6 months?
+
+How was my sleep and HRV this week? Do I look recovered enough for a hard session?
+
+Compare my body battery levels on days after long runs vs. rest days.
+
+Show my HRV trend over the last month and flag any nights below baseline.
 ```
 
 ## Development
@@ -148,3 +188,5 @@ uv run python -m claude2strava.web.app
 ## Token refresh
 
 Strava access tokens expire every 6 hours. The MCP server auto-refreshes them before each API call using the stored refresh token (which doesn't expire). If the refresh token ever becomes invalid (e.g., you revoke access in Strava), re-run the web UI to reconnect.
+
+Garmin sessions last approximately 30 days. Re-authenticate via the web dashboard at [http://localhost:8080](http://localhost:8080) when prompted.
