@@ -32,6 +32,7 @@ mcp = FastMCP("RunCoach MCP", instructions=(
     "Garmin: use get_garmin_sleep, get_garmin_hrv, get_garmin_daily_stats, "
     "get_garmin_body_battery, get_garmin_sleep_range for HRV, sleep and recovery data. "
     "Use get_garmin_weight / get_garmin_weight_range for body weight and composition data. "
+    "Use get_garmin_user_profile for age, height, and baseline user info. "
     "Combine both sources for complete training + recovery analysis."
 ))
 
@@ -504,6 +505,21 @@ async def get_garmin_weight_range(start_date: str, end_date: str) -> list[dict]:
     client = _get_garmin()
     return await asyncio.get_event_loop().run_in_executor(
         None, client.get_weight_range, start_date, end_date
+    )
+
+
+@mcp.tool()
+async def get_garmin_user_profile() -> dict:
+    """
+    Get basic user profile data from Garmin Connect.
+
+    Returns display_name, age, height_cm, weight_kg (last recorded), gender,
+    and birth_date. Useful as baseline context for training load calculations,
+    VO2max estimates, and health metric interpretation.
+    """
+    client = _get_garmin()
+    return await asyncio.get_event_loop().run_in_executor(
+        None, client.get_user_profile
     )
 
 
