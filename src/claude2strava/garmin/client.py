@@ -139,6 +139,47 @@ class GarminClient:
         """Body battery readings across a date range (YYYY-MM-DD to YYYY-MM-DD)."""
         return self._call("get_body_battery", start_date, end_date)
 
+    def get_weight(self, cdate: str) -> dict:
+        """
+        Body composition / weight data for a single calendar date (YYYY-MM-DD).
+        Returns weight (kg), BMI, body fat %, muscle mass, bone mass, body water %.
+        """
+        raw = self._call("get_body_composition", cdate, cdate)
+        entries = raw.get("dateWeightList", []) if isinstance(raw, dict) else []
+        if not entries:
+            return {"date": cdate, "weight_kg": None}
+        entry = entries[0]
+        return {
+            "date":              cdate,
+            "weight_kg":         entry.get("weight") / 1000 if entry.get("weight") is not None else None,
+            "bmi":               entry.get("bmi"),
+            "body_fat_pct":      entry.get("bodyFat"),
+            "muscle_mass_kg":    entry.get("muscleMass") / 1000 if entry.get("muscleMass") is not None else None,
+            "bone_mass_kg":      entry.get("boneMass") / 1000 if entry.get("boneMass") is not None else None,
+            "body_water_pct":    entry.get("bodyWater"),
+        }
+
+    def get_weight_range(self, start_date: str, end_date: str) -> list[dict]:
+        """
+        Body composition / weight data for a date range (YYYY-MM-DD to YYYY-MM-DD).
+        Returns one entry per day that has a measurement.
+        """
+        raw = self._call("get_body_composition", start_date, end_date)
+        entries = raw.get("dateWeightList", []) if isinstance(raw, dict) else []
+        results = []
+        for entry in entries:
+            cdate = entry.get("calendarDate") or entry.get("date")
+            results.append({
+                "date":           cdate,
+                "weight_kg":      entry.get("weight") / 1000 if entry.get("weight") is not None else None,
+                "bmi":            entry.get("bmi"),
+                "body_fat_pct":   entry.get("bodyFat"),
+                "muscle_mass_kg": entry.get("muscleMass") / 1000 if entry.get("muscleMass") is not None else None,
+                "bone_mass_kg":   entry.get("boneMass") / 1000 if entry.get("boneMass") is not None else None,
+                "body_water_pct": entry.get("bodyWater"),
+            })
+        return results
+
     def get_sleep_range(self, start_date: str, end_date: str) -> list[dict]:
         """
         Collect key sleep metrics day-by-day for a date range.
