@@ -3,58 +3,434 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Claude2Strava{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,700;0,900;1,700;1,900&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>{% block title %}RunCoach MCP{% endblock %}</title>
   <style>
+    :root {
+      --bg:         oklch(10.5% 0.008 250);
+      --bg-panel:   oklch(15.5% 0.010 250);
+      --bg-raise:   oklch(21%   0.013 250);
+      --border:     oklch(24%   0.015 250);
+      --border-sub: oklch(18%   0.010 250);
+
+      --ink:   oklch(93% 0.006 250);
+      --ink-2: oklch(68% 0.009 250);
+      --ink-3: oklch(55% 0.007 250);
+
+      --strava:    oklch(62% 0.22  30);
+      --strava-bg: oklch(20% 0.07  30);
+      --garmin:    oklch(57% 0.18 240);
+      --garmin-bg: oklch(20% 0.07 240);
+
+      --green:    oklch(67% 0.19 145);
+      --green-bg: oklch(19% 0.07 145);
+      --red:      oklch(58% 0.21  25);
+      --red-bg:   oklch(20% 0.08  25);
+
+      --r:    10px;
+      --r-lg: 14px;
+
+      /* Premium spring-like easing — cubic-bezier(0.32, 0.72, 0, 1) */
+      --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
-      min-height: 100vh;
+      font-family: 'Barlow', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 28px 16px;
+      line-height: 1.5;
+      position: relative;
+      overflow-x: hidden;
     }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 16px rgba(0,0,0,.08);
-      padding: 2.5rem 2rem;
-      max-width: 480px;
+
+    /* ── Ambient background orbs (Ethereal Glass vibe) ──────────
+       Fixed, pointer-events-none, GPU-composited via will-change.
+       No filter:blur — radial-gradient natively creates soft diffusion. */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+    }
+    .bg-orb--a {
+      width: 680px;
+      height: 680px;
+      background: radial-gradient(circle, oklch(62% 0.22 30 / 0.065) 0%, transparent 65%);
+      top: -220px;
+      left: -220px;
+      animation: orb-drift 24s ease-in-out infinite;
+    }
+    .bg-orb--b {
+      width: 580px;
+      height: 580px;
+      background: radial-gradient(circle, oklch(57% 0.18 240 / 0.060) 0%, transparent 65%);
+      bottom: -160px;
+      right: -160px;
+      animation: orb-drift 30s ease-in-out infinite reverse;
+    }
+
+    /* ── Typography ─────────────────────────────────────────────── */
+    h1 {
+      font-family: 'Bodoni Moda', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.05;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: var(--ink-2);
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    /* Pill badge with pulsing LED dot — used in masthead and single-page headers */
+    .eyebrow-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px 4px 8px;
+      background: oklch(19% 0.012 250);
+      border: 1px solid oklch(26% 0.015 250);
+      border-radius: 99px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .eyebrow-badge__dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      animation: led-pulse 2.8s ease-in-out infinite;
+    }
+
+    .small {
+      font-size: 0.77rem;
+      color: var(--ink-3);
+      line-height: 1.55;
+    }
+
+    code {
+      font-size: 0.72rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--ink-2);
+      font-family: ui-monospace, 'Cascadia Code', monospace;
+    }
+
+    /* ── Double-Bezel page wrap (narrow pages) ─────────────────── */
+    /* Outer shell: gradient border via background + padding-bezel   */
+    .page-wrap {
       width: 100%;
+      max-width: 400px;
+      position: relative;
+      z-index: 1;
+      animation: fade-up 0.28s var(--ease) both;
+
+      border-radius: 20px;
+      padding: 1.5px;
+      background: linear-gradient(
+        145deg,
+        oklch(28% 0.016 250 / 0.75),
+        oklch(18% 0.010 250 / 0.35) 70%
+      );
+      box-shadow:
+        inset 0 0.5px 0 rgba(255,255,255,0.04),
+        0 40px 80px -20px rgba(0,0,0,0.40);
+    }
+
+    /* Inner core */
+    .box {
+      background: var(--bg-panel);
+      border: none;
+      border-radius: calc(20px - 1.5px);
+      padding: 42px 36px;
       text-align: center;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.065),
+        inset 0 -1px 0 rgba(0,0,0,0.18);
     }
-    .logo { font-size: 2.5rem; margin-bottom: .5rem; }
-    h1 { font-size: 1.4rem; font-weight: 700; color: #1a1a1a; margin-bottom: .4rem; }
-    p { color: #555; font-size: .95rem; line-height: 1.5; margin-bottom: 1.2rem; }
-    .badge {
-      display: inline-flex; align-items: center; gap: .4rem;
-      padding: .35rem .8rem; border-radius: 99px; font-size: .85rem; font-weight: 600;
-      margin-bottom: 1.5rem;
+
+    /* ── Status indicators ───────────────────────────────────────── */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.77rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
     }
-    .badge.connected { background: #e6f9f0; color: #1a7a4a; }
-    .badge.disconnected { background: #fff0ee; color: #c0392b; }
+    .status__dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status--on  { color: var(--green); }
+    .status--on  .status__dot { background: var(--green); animation: led-pulse 2.8s ease-in-out infinite; }
+    .status--off { color: var(--ink-3); }
+    .status--off .status__dot { background: var(--ink-3); }
+
+    /* ── Standard buttons ────────────────────────────────────────── */
     .btn {
-      display: inline-block; padding: .7rem 1.6rem; border-radius: 8px;
-      font-size: .95rem; font-weight: 600; cursor: pointer; border: none;
-      text-decoration: none; transition: opacity .15s;
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: var(--r);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      line-height: 1;
+      white-space: nowrap;
+      transition:
+        transform 0.35s var(--ease),
+        filter     0.2s  ease,
+        background 0.2s  ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
     }
-    .btn:hover { opacity: .85; }
-    .btn-strava { background: #fc4c02; color: #fff; }
-    .btn-garmin { background: #007dc3; color: #fff; }
-    .btn-danger { background: #c0392b; color: #fff; font-size: .85rem; padding: .5rem 1rem; }
-    .btn-secondary { background: #e8e8e8; color: #333; }
-    .section-label { font-size: .7rem; font-weight: 700; text-transform: uppercase;
-                     letter-spacing: .08em; color: #aaa; margin-bottom: .75rem; }
-    .divider { border: none; border-top: 1px solid #eee; margin: 1.5rem 0; }
-    .small { font-size: .8rem; color: #999; }
-    .icon-ok { color: #1a7a4a; font-size: 3rem; margin-bottom: .75rem; display: block; }
-    .icon-err { color: #c0392b; font-size: 3rem; margin-bottom: .75rem; display: block; }
+    .btn:hover:not(:disabled)  { transform: translateY(-2px); }
+    .btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+    .btn:disabled              { opacity: 0.38; cursor: default; }
+    .btn--full { width: 100%; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink-2);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      border-color: oklch(33% 0.016 250);
+      color: var(--ink);
+      background: oklch(19% 0.011 250);
+    }
+    .btn-secondary {
+      background: var(--bg-raise);
+      color: var(--ink-2);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { color: var(--ink); }
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid oklch(28% 0.10 25);
+      font-size: 0.75rem;
+      padding: 7px 14px;
+    }
+    .btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+
+    /* ── Button-in-Button island (primary CTAs) ─────────────────── */
+    /* Pill-shaped with nested circular icon — Doppelrand for buttons */
+    .btn-island {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 11px 11px 22px;
+      border-radius: 99px;
+      width: 100%;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1;
+      transition: transform 0.35s var(--ease), filter 0.2s ease;
+    }
+    .btn-island:hover:not(:disabled)  { transform: translateY(-2px); }
+    .btn-island:active:not(:disabled) { transform: scale(0.97); }
+
+    .btn-island--strava { background: var(--strava); color: #fff; }
+    .btn-island--garmin { background: var(--garmin); color: #fff; }
+
+    /* The nested icon circle — physically pressed into the button */
+    .btn-island__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.14),
+        inset 0 -1px 0 rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.35s var(--ease);
+    }
+    .btn-island:hover .btn-island__icon {
+      transform: translate(2px, -1.5px) scale(1.06);
+    }
+
+    /* ── Divider ─────────────────────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border-sub);
+      margin: 20px 0;
+    }
+
+    /* ── Status icons (callback pages) ──────────────────────────── */
+    .icon-ok  { color: var(--green); width: 2.5rem; height: 2.5rem; display: block; margin: 0 auto 18px; }
+    .icon-err { color: var(--red);   width: 2.5rem; height: 2.5rem; display: block; margin: 0 auto 18px; }
+
+    /* ── Error banner ────────────────────────────────────────────── */
+    .error-banner {
+      background: var(--red-bg);
+      border: 1px solid oklch(30% 0.11 25);
+      border-radius: var(--r);
+      padding: 9px 14px;
+      color: var(--red);
+      font-size: 0.8rem;
+      margin-bottom: 18px;
+    }
+
+    /* ── Form elements ───────────────────────────────────────────── */
+    .form-field   { margin-bottom: 18px; text-align: left; }
+    .form-label {
+      display: block;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 7px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 13px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.93rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s var(--ease);
+    }
+    .form-input:focus { border-color: oklch(44% 0.022 250); }
+    .form-input::placeholder { color: var(--ink-3); }
+
+    /* ── Film grain overlay ─────────────────────────────────────── */
+    /* Large tiled area prevents edge gaps during translate animation */
+    .bg-grain {
+      position: fixed;
+      inset: -200%;
+      width: 400%;
+      height: 400%;
+      background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+      background-size: 200px 200px;
+      opacity: 0.06;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+      animation: grain-noise 0.7s step-end infinite;
+    }
+
+    /* ── Horizontal scanlines ────────────────────────────────────── */
+    .bg-scanlines {
+      position: fixed;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        oklch(100% 0 0 / 0.007) 3px,
+        oklch(100% 0 0 / 0.007) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+      animation: scanlines-drift 35s linear infinite;
+    }
+
+    /* ── Keyframes ───────────────────────────────────────────────── */
+    @keyframes grain-noise {
+      0%   { transform: translate(  0%,   0%); }
+      14%  { transform: translate( -6%,   4%); }
+      28%  { transform: translate(  4%,  -9%); }
+      42%  { transform: translate( -9%,   2%); }
+      57%  { transform: translate(  7%,  -4%); }
+      71%  { transform: translate( -3%,   9%); }
+      85%  { transform: translate(  5%,   3%); }
+    }
+    @keyframes scanlines-drift {
+      from { background-position: 0 0; }
+      to   { background-position: 0 80px; }
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes led-pulse {
+      0%, 100% { box-shadow: 0 0 3px oklch(67% 0.19 145 / 0.45); }
+      50%       { box-shadow: 0 0 8px oklch(67% 0.19 145 / 0.75),
+                              0 0 16px oklch(67% 0.19 145 / 0.25); }
+    }
+    @keyframes orb-drift {
+      0%, 100% { transform: translate(0, 0)     scale(1);    }
+      33%       { transform: translate(24px, -18px) scale(1.04); }
+      66%       { transform: translate(-12px, 22px) scale(0.97); }
+    }
+
+    /* Respect user's motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
+  {% block head %}{% endblock %}
 </head>
 <body>
-  <div class="card">
-    {% block content %}{% endblock %}
-  </div>
+  <!-- Ambient background orbs — Ethereal Glass atmosphere -->
+  <div class="bg-orb bg-orb--a" aria-hidden="true"></div>
+  <div class="bg-orb bg-orb--b" aria-hidden="true"></div>
+  <!-- Film grain + scanlines for tactile depth -->
+  <div class="bg-grain" aria-hidden="true"></div>
+  <div class="bg-scanlines" aria-hidden="true"></div>
+
+  {% block content %}{% endblock %}
 </body>
 </html>

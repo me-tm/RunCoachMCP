@@ -1,30 +1,46 @@
 {% extends "base.html" %}
 {% block title %}Garmin Connect verbinden{% endblock %}
+
 {% block content %}
-<div class="logo">⌚</div>
-<h1>Garmin Connect</h1>
-<p>Gib deine Garmin-Zugangsdaten ein. Das Passwort wird <strong>nicht</strong> gespeichert — nur die Session-Cookies nach erfolgreichem Login.</p>
+<div class="page-wrap">
+  <div class="box">
+    <div style="margin-bottom:20px;">
+      <div class="eyebrow-badge" style="--badge-dot: var(--garmin);">
+        <span class="eyebrow-badge__dot" style="background:var(--garmin);animation:none;" aria-hidden="true"></span>
+        Garmin Connect
+      </div>
+    </div>
+    <h1 style="margin-bottom:10px;">Anmelden</h1>
+    <p style="margin-bottom:24px;">Gib deine Garmin-Zugangsdaten ein. Das Passwort wird <strong style="color:var(--ink);">nicht</strong> gespeichert — nur die Session-Cookies nach erfolgreichem Login.</p>
 
-{% if error %}
-  <div class="badge disconnected" style="margin-bottom:1rem;">{{ error }}</div>
-{% endif %}
+    {% if error %}
+      <div class="error-banner">{{ error }}</div>
+    {% endif %}
 
-<form action="/auth/garmin/connect" method="post" style="text-align:left;">
-  <div style="margin-bottom:1rem;">
-    <label style="display:block;font-size:.85rem;font-weight:600;color:#333;margin-bottom:.4rem;">E-Mail</label>
-    <input type="email" name="email" required autocomplete="email"
-           style="width:100%;padding:.6rem .8rem;border:1.5px solid #ddd;border-radius:7px;font-size:.95rem;outline:none;"
-           placeholder="deine@email.de">
+    <form action="/auth/garmin/connect" method="post">
+      <div class="form-field">
+        <label class="form-label" for="email">E-Mail</label>
+        <input id="email" class="form-input" type="email" name="email"
+               required autocomplete="email" placeholder="deine@email.de">
+      </div>
+      <div class="form-field" style="margin-bottom:24px;">
+        <label class="form-label" for="password">Passwort</label>
+        <input id="password" class="form-input" type="password" name="password"
+               required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-island btn-island--garmin" style="width:100%;">
+        <span>Verbinden</span>
+        <span class="btn-island__icon" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </span>
+      </button>
+    </form>
+
+    <hr class="divider">
+    <a href="/" class="small" style="color:var(--ink-3);text-decoration:none;">← Zurück zum Dashboard</a>
   </div>
-  <div style="margin-bottom:1.5rem;">
-    <label style="display:block;font-size:.85rem;font-weight:600;color:#333;margin-bottom:.4rem;">Passwort</label>
-    <input type="password" name="password" required autocomplete="current-password"
-           style="width:100%;padding:.6rem .8rem;border:1.5px solid #ddd;border-radius:7px;font-size:.95rem;outline:none;"
-           placeholder="••••••••">
-  </div>
-  <button type="submit" class="btn btn-garmin" style="width:100%;">Verbinden</button>
-</form>
-
-<hr class="divider">
-<a href="/" class="small" style="color:#999;text-decoration:none;">← Zurück zum Dashboard</a>
+</div>
 {% endblock %}

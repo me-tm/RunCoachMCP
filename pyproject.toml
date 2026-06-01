@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "claude2strava"
 version = "0.1.0"
-description = "Claude MCP server for Strava workout analysis"
+description = "RunCoach MCP — Claude MCP server for Strava and Garmin training analysis"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
