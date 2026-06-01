@@ -180,6 +180,22 @@ class GarminClient:
             })
         return results
 
+    def get_user_profile(self) -> dict:
+        """
+        Fetch basic user profile data: age, height, weight, gender, birthdate.
+        Sourced from /userprofile-service/userprofile/user-settings → userData.
+        """
+        raw = self._call("get_user_profile")
+        user_data = raw.get("userData", {}) if isinstance(raw, dict) else {}
+        return {
+            "display_name":  raw.get("displayName") if isinstance(raw, dict) else None,
+            "age":           user_data.get("age"),
+            "height_cm":     user_data.get("height"),
+            "weight_kg":     user_data.get("weight") / 1000 if user_data.get("weight") is not None else None,
+            "gender":        user_data.get("gender"),
+            "birth_date":    user_data.get("birthDate"),
+        }
+
     def get_sleep_range(self, start_date: str, end_date: str) -> list[dict]:
         """
         Collect key sleep metrics day-by-day for a date range.
