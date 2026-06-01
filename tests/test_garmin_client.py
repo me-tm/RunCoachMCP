@@ -220,3 +220,66 @@ def test_get_sleep_range_multi_day(MockGarmin, client):
     assert result[0]["date"] == "2024-01-13"
     assert result[2]["date"] == "2024-01-15"
     assert result[0]["avg_hrv"] == 55.0
+
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_get_weight_single_day(MockGarmin, client):
+    mock_api = MagicMock()
+    mock_api.get_body_composition.return_value = {
+        "dateWeightList": [
+            {
+                "calendarDate": "2024-01-15",
+                "weight": 80500,      # grams
+                "bmi": 24.1,
+                "bodyFat": 18.5,
+                "muscleMass": 62000,  # grams
+                "boneMass": 3200,     # grams
+                "bodyWater": 58.2,
+            }
+        ]
+    }
+    MockGarmin.return_value = mock_api
+
+    result = client.get_weight("2024-01-15")
+
+    mock_api.get_body_composition.assert_called_once_with("2024-01-15", "2024-01-15")
+    assert result["date"] == "2024-01-15"
+    assert result["weight_kg"] == pytest.approx(80.5)
+    assert result["bmi"] == pytest.approx(24.1)
+    assert result["body_fat_pct"] == pytest.approx(18.5)
+    assert result["muscle_mass_kg"] == pytest.approx(62.0)
+    assert result["bone_mass_kg"] == pytest.approx(3.2)
+    assert result["body_water_pct"] == pytest.approx(58.2)
+
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_get_weight_no_data(MockGarmin, client):
+    mock_api = MagicMock()
+    mock_api.get_body_composition.return_value = {"dateWeightList": []}
+    MockGarmin.return_value = mock_api
+
+    result = client.get_weight("2024-01-15")
+    assert result == {"date": "2024-01-15", "weight_kg": None}
+
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_get_weight_range(MockGarmin, client):
+    mock_api = MagicMock()
+    mock_api.get_body_composition.return_value = {
+        "dateWeightList": [
+            {"calendarDate": "2024-01-13", "weight": 81000, "bmi": 24.3,
+             "bodyFat": 19.0, "muscleMass": 62000, "boneMass": 3200, "bodyWater": 57.5},
+            {"calendarDate": "2024-01-14", "weight": 80800, "bmi": 24.2,
+             "bodyFat": 18.8, "muscleMass": 62100, "boneMass": 3200, "bodyWater": 57.8},
+        ]
+    }
+    MockGarmin.return_value = mock_api
+
+    result = client.get_weight_range("2024-01-13", "2024-01-14")
+
+    mock_api.get_body_composition.assert_called_once_with("2024-01-13", "2024-01-14")
+    assert len(result) == 2
+    assert result[0]["date"] == "2024-01-13"
+    assert result[0]["weight_kg"] == pytest.approx(81.0)
+    assert result[1]["date"] == "2024-01-14"
+    assert result[1]["weight_kg"] == pytest.approx(80.8)

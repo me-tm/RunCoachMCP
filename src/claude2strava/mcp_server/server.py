@@ -31,6 +31,7 @@ mcp = FastMCP("RunCoach MCP", instructions=(
     "Strava: use list_activities, get_activity, get_activity_streams, get_athlete_stats. "
     "Garmin: use get_garmin_sleep, get_garmin_hrv, get_garmin_daily_stats, "
     "get_garmin_body_battery, get_garmin_sleep_range for HRV, sleep and recovery data. "
+    "Use get_garmin_weight / get_garmin_weight_range for body weight and composition data. "
     "Combine both sources for complete training + recovery analysis."
 ))
 
@@ -467,6 +468,43 @@ async def get_garmin_body_battery(start_date: str, end_date: str) -> list[dict]:
                 "start_of_day": entry.get("startOfDayValue"),
             })
     return results
+
+
+@mcp.tool()
+async def get_garmin_weight(date: str) -> dict:
+    """
+    Get body composition / weight data from Garmin Connect for a single day.
+
+    Parameters
+    ----------
+    date : "YYYY-MM-DD"
+
+    Returns weight_kg, BMI, body_fat_pct, muscle_mass_kg, bone_mass_kg,
+    body_water_pct. Fields are None when no measurement exists for that day.
+    """
+    client = _get_garmin()
+    return await asyncio.get_event_loop().run_in_executor(
+        None, client.get_weight, date
+    )
+
+
+@mcp.tool()
+async def get_garmin_weight_range(start_date: str, end_date: str) -> list[dict]:
+    """
+    Get body composition / weight data from Garmin Connect for a date range.
+    Useful for tracking weight trends over a training block or diet phase.
+
+    Parameters
+    ----------
+    start_date / end_date : "YYYY-MM-DD"
+
+    Returns one entry per day that has a recorded measurement, each with
+    weight_kg, BMI, body_fat_pct, muscle_mass_kg, bone_mass_kg, body_water_pct.
+    """
+    client = _get_garmin()
+    return await asyncio.get_event_loop().run_in_executor(
+        None, client.get_weight_range, start_date, end_date
+    )
 
 
 @mcp.tool()
