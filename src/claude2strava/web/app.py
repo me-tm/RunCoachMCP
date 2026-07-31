@@ -12,6 +12,7 @@ from ..garmin.client import (
     complete_mfa,
     extract_session,
     login as garmin_login,
+    profile_names,
 )
 from ..garmin.session_store import (
     GarminNotConnectedError,
@@ -235,9 +236,16 @@ async def garmin_connect(
         resp.set_cookie(key="garmin_sid", value=session_id, httponly=True, samesite="lax", max_age=300)
         return resp
 
-    # Login succeeded without 2FA — persist tokens
+    # Login succeeded without 2FA — persist tokens plus the display name,
+    # which the MCP client needs for the stats/sleep endpoints
     token_json = extract_session(api)
-    garmin_store.save(GarminSessionData(username=email, token_json=token_json))
+    display_name, full_name = await loop.run_in_executor(None, profile_names, api)
+    garmin_store.save(GarminSessionData(
+        username=email,
+        token_json=token_json,
+        display_name=display_name,
+        full_name=full_name,
+    ))
     return _render("garmin_callback.html", success=True, username=email)
 
 
@@ -264,7 +272,13 @@ async def garmin_verify(
 
     token_json = extract_session(api)
     username = getattr(api, "username", "") or getattr(api, "email", "")
-    garmin_store.save(GarminSessionData(username=username, token_json=token_json))
+    display_name, full_name = await loop.run_in_executor(None, profile_names, api)
+    garmin_store.save(GarminSessionData(
+        username=username,
+        token_json=token_json,
+        display_name=display_name,
+        full_name=full_name,
+    ))
     response = _render("garmin_callback.html", success=True, username=username)
     response.delete_cookie("garmin_sid")
     return response
@@ -289,7 +303,7 @@ async def api_check_garmin():
         client = GarminClient(garmin_store)
         loop = asyncio.get_event_loop()
         profile = await loop.run_in_executor(None, client.check_connection)
-        name = f"{profile.get('displayName', '')}".strip() or profile.get("userName", "")
+        name = (profile.get("full_name") or profile.get("display_name") or "").strip()
         return JSONResponse({"ok": True, "username": name})
     except GarminSessionExpiredError as exc:
         return JSONResponse({"ok": False, "error": str(exc)})

@@ -11,7 +11,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from claude2strava.crypto import Crypto
-from claude2strava.garmin.client import GarminClient, extract_session, restore_session
+from claude2strava.garmin.client import (
+    SOCIAL_PROFILE_PATH,
+    GarminClient,
+    extract_session,
+    profile_names,
+    restore_session,
+)
 from claude2strava.garmin.session_store import (
     GarminNotConnectedError,
     GarminSessionData,
@@ -36,6 +42,19 @@ def store(tmp_path, fernet_key):
 
 @pytest.fixture
 def saved_session(store):
+    data = GarminSessionData(
+        username="athlete@example.com",
+        token_json=SAMPLE_TOKEN_JSON,
+        display_name="tobias123",
+        full_name="Tobias M",
+    )
+    store.save(data)
+    return data
+
+
+@pytest.fixture
+def legacy_session(store):
+    """Session written before display_name was persisted."""
     data = GarminSessionData(username="athlete@example.com", token_json=SAMPLE_TOKEN_JSON)
     store.save(data)
     return data
@@ -110,11 +129,17 @@ def test_restore_session_calls_loads():
 @patch("claude2strava.garmin.client.Garmin")
 def test_check_connection_success(MockGarmin, client):
     mock_api = MagicMock()
-    mock_api.get_user_profile.return_value = {"displayName": "Tobias", "userId": 42}
+    mock_api.connectapi.return_value = {
+        "displayName": "tobias123",
+        "fullName": "Tobias M",
+        "userProfileId": 42,
+    }
     MockGarmin.return_value = mock_api
 
     result = client.check_connection()
-    assert result["displayName"] == "Tobias"
+    assert result["display_name"] == "tobias123"
+    assert result["full_name"] == "Tobias M"
+    assert result["user_id"] == 42
     mock_api.client.loads.assert_called_once_with(SAMPLE_TOKEN_JSON)
 
 
@@ -197,11 +222,104 @@ def test_get_body_battery_returns_list(MockGarmin, client):
 def test_session_expired_raises(MockGarmin, client):
     from garminconnect import GarminConnectAuthenticationError
     mock_api = MagicMock()
-    mock_api.get_user_profile.side_effect = GarminConnectAuthenticationError("expired")
+    mock_api.connectapi.side_effect = GarminConnectAuthenticationError("expired")
     MockGarmin.return_value = mock_api
 
     with pytest.raises(GarminSessionExpiredError):
         client.check_connection()
+
+
+# ── display_name restoration ───────────────────────────────────────────────────
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_display_name_attached_from_session(MockGarmin, client):
+    """Restored sessions must carry the display name — several URLs contain it."""
+    mock_api = MagicMock()
+    mock_api.display_name = None
+    mock_api.get_stats.return_value = {"totalSteps": 8500}
+    MockGarmin.return_value = mock_api
+
+    client.get_daily_stats("2024-01-15")
+
+    assert mock_api.display_name == "tobias123"
+    assert mock_api.full_name == "Tobias M"
+    mock_api.connectapi.assert_not_called()   # no extra request when stored
+
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_display_name_fetched_and_persisted_for_legacy_session(MockGarmin, store, legacy_session):
+    mock_api = MagicMock()
+    mock_api.display_name = None
+    mock_api.connectapi.return_value = {"displayName": "tobias123", "fullName": "Tobias M"}
+    mock_api.get_stats.return_value = {"totalSteps": 8500}
+    MockGarmin.return_value = mock_api
+
+    GarminClient(store).get_daily_stats("2024-01-15")
+
+    mock_api.connectapi.assert_called_once_with(SOCIAL_PROFILE_PATH)
+    assert mock_api.display_name == "tobias123"
+    # persisted, so the next call needs no extra round trip
+    assert store.load().display_name == "tobias123"
+    assert store.load().full_name == "Tobias M"
+
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_missing_display_name_raises_session_expired(MockGarmin, store, legacy_session):
+    mock_api = MagicMock()
+    mock_api.display_name = None
+    mock_api.connectapi.return_value = {}
+    MockGarmin.return_value = mock_api
+
+    with pytest.raises(GarminSessionExpiredError):
+        GarminClient(store).get_daily_stats("2024-01-15")
+
+    mock_api.get_stats.assert_not_called()
+
+
+def test_profile_names_prefers_logged_in_values():
+    mock_api = MagicMock()
+    mock_api.display_name = "tobias123"
+    mock_api.full_name = "Tobias M"
+
+    assert profile_names(mock_api) == ("tobias123", "Tobias M")
+    mock_api.connectapi.assert_not_called()
+
+
+def test_profile_names_falls_back_to_social_profile():
+    mock_api = MagicMock()
+    mock_api.display_name = None
+    mock_api.connectapi.return_value = {"displayName": "tobias123", "fullName": "Tobias M"}
+
+    assert profile_names(mock_api) == ("tobias123", "Tobias M")
+    mock_api.connectapi.assert_called_once_with(SOCIAL_PROFILE_PATH)
+
+
+def test_profile_names_swallows_fetch_errors():
+    mock_api = MagicMock()
+    mock_api.display_name = None
+    mock_api.connectapi.side_effect = Exception("boom")
+
+    assert profile_names(mock_api) == (None, None)
+
+
+@patch("claude2strava.garmin.client.Garmin")
+def test_get_user_profile_uses_display_name_from_session(MockGarmin, client):
+    mock_api = MagicMock()
+    mock_api.display_name = None
+    mock_api.full_name = None
+    mock_api.get_user_profile.return_value = {
+        "userData": {"age": 41, "height": 183.0, "weight": 80500.0, "gender": "MALE",
+                     "birthDate": "1984-05-01"},
+    }
+    MockGarmin.return_value = mock_api
+
+    result = client.get_user_profile()
+
+    assert result["display_name"] == "tobias123"   # user-settings has no displayName
+    assert result["full_name"] == "Tobias M"
+    assert result["age"] == 41
+    assert result["height_cm"] == pytest.approx(183.0)
+    assert result["weight_kg"] == pytest.approx(80.5)
 
 
 @patch("claude2strava.garmin.client.Garmin")
