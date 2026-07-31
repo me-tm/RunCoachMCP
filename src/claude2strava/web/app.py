@@ -20,14 +20,6 @@ from ..garmin.session_store import (
     GarminSessionExpiredError,
     GarminSessionStore,
 )
-from ..strava.auth import (
-    build_auth_url,
-    exchange_code,
-    generate_pkce_pair,
-    generate_state,
-    StravaAuthError,
-)
-from ..token_store import TokenData, TokenStore
 
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -44,35 +36,25 @@ def _render(template_name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(_jinja_env.get_template(template_name).render(**ctx))
 
 
-app = FastAPI(title="Claude2Strava OAuth UI", docs_url=None, redoc_url=None)
+app = FastAPI(title="RunCoach MCP Connect UI", docs_url=None, redoc_url=None)
 
 # ── Server-side state ─────────────────────────────────────────────────────────
-
-# Strava OAuth: session_id → {state, verifier}
-_pending_oauth: dict[str, dict] = {}
 
 # Garmin 2FA: session_id → partially-authenticated Garmin API object
 _pending_garmin: dict[str, object] = {}
 
 # Lazily built singletons
 _settings      = None
-_strava_store  = None
 _garmin_store  = None
 _crypto        = None
 
 
 def _init_deps() -> None:
-    global _settings, _strava_store, _garmin_store, _crypto
+    global _settings, _garmin_store, _crypto
     if _settings is None:
         _settings = get_settings()
         _crypto = Crypto(_settings.get_fernet_key())
-        _strava_store = TokenStore(_settings.token_dir, _crypto)
         _garmin_store = GarminSessionStore(_settings.token_dir, _crypto)
-
-
-def _get_strava():
-    _init_deps()
-    return _settings, _strava_store
 
 
 def _get_garmin_store() -> GarminSessionStore:
@@ -86,15 +68,6 @@ def _get_garmin_store() -> GarminSessionStore:
 async def index(request: Request):
     _init_deps()
 
-    # Strava status
-    strava_connected = _strava_store.exists()
-    athlete_name = ""
-    if strava_connected:
-        try:
-            athlete_name = _strava_store.load().athlete_name
-        except Exception:
-            strava_connected = False
-
     # Garmin status
     garmin_connected = _garmin_store.exists()
     garmin_username = ""
@@ -106,102 +79,9 @@ async def index(request: Request):
 
     return _render(
         "index.html",
-        connected=strava_connected,
-        athlete_name=athlete_name,
         garmin_connected=garmin_connected,
         garmin_username=garmin_username,
     )
-
-
-# ── Strava OAuth ───────────────────────────────────────────────────────────────
-
-@app.get("/auth/strava/start")
-async def auth_start():
-    settings, _ = _get_strava()
-    pkce = generate_pkce_pair()
-    state = generate_state()
-    session_id = secrets.token_urlsafe(16)
-    _pending_oauth[session_id] = {"state": state, "verifier": pkce.verifier}
-    auth_url = build_auth_url(settings.strava_client_id, state, pkce.challenge, settings.web_port)
-    redirect = RedirectResponse(url=auth_url, status_code=302)
-    redirect.set_cookie(key="oauth_sid", value=session_id, httponly=True, samesite="lax", max_age=600)
-    return redirect
-
-
-@app.get("/auth/strava/callback", response_class=HTMLResponse)
-async def auth_callback(request: Request, code: str = "", state: str = "", error: str = ""):
-    settings, store = _get_strava()
-    session_id = request.cookies.get("oauth_sid")
-    session = _pending_oauth.pop(session_id, {}) if session_id else {}
-
-    if error:
-        return _render("callback.html", success=False, message=f"Strava denied access: {error}")
-    if not session or session.get("state") != state:
-        return _render("callback.html", success=False, message="Invalid OAuth state — possible CSRF. Please try again.")
-    if not code:
-        return _render("callback.html", success=False, message="No authorization code received.")
-
-    try:
-        import httpx
-        async with httpx.AsyncClient() as client:
-            token_data = await exchange_code(
-                settings.strava_client_id,
-                settings.strava_client_secret,
-                code,
-                session["verifier"],
-                settings.web_port,
-                http_client=client,
-            )
-    except StravaAuthError as exc:
-        return _render("callback.html", success=False, message=str(exc))
-
-    athlete = token_data.get("athlete", {})
-    full_name = f"{athlete.get('firstname', '')} {athlete.get('lastname', '')}".strip()
-    store.save(TokenData(
-        access_token=token_data["access_token"],
-        refresh_token=token_data["refresh_token"],
-        expires_at=token_data["expires_at"],
-        athlete_id=athlete.get("id", 0),
-        athlete_name=full_name,
-    ))
-    response = _render("callback.html", success=True, athlete_name=full_name)
-    response.delete_cookie("oauth_sid")
-    return response
-
-
-@app.get("/api/check")
-async def api_check():
-    _, store = _get_strava()
-    if not store.exists():
-        return JSONResponse({"ok": False, "error": "No token stored — connect Strava first."})
-    try:
-        data = store.load()
-    except Exception as exc:
-        return JSONResponse({"ok": False, "error": f"Token decryption failed: {exc}"})
-    try:
-        import httpx
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(
-                "https://www.strava.com/api/v3/athlete",
-                headers={"Authorization": f"Bearer {data.access_token}"},
-            )
-        if resp.status_code == 200:
-            a = resp.json()
-            name = f"{a.get('firstname', '')} {a.get('lastname', '')}".strip()
-            return JSONResponse({"ok": True, "athlete": name, "id": a.get("id")})
-        elif resp.status_code == 401:
-            return JSONResponse({"ok": False, "error": "Access token expired — reconnect Strava to refresh."})
-        else:
-            return JSONResponse({"ok": False, "error": f"Strava returned HTTP {resp.status_code}."})
-    except Exception as exc:
-        return JSONResponse({"ok": False, "error": f"Network error: {exc}"})
-
-
-@app.post("/auth/strava/disconnect")
-async def disconnect():
-    _, store = _get_strava()
-    store.delete()
-    return RedirectResponse(url="/", status_code=303)
 
 
 # ── Garmin Connect ─────────────────────────────────────────────────────────────

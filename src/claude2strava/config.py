@@ -13,9 +13,6 @@ _ENV_FILE = Path(__file__).parent.parent.parent / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(_ENV_FILE), env_file_encoding="utf-8", extra="ignore")
 
-    strava_client_id: str = ""
-    strava_client_secret: str = ""
-
     # AES-256 key for encrypting tokens on disk. Auto-generated if blank.
     token_encryption_key: str = ""
 

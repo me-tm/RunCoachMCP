@@ -1,6 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
 
-  <!-- Background: very dark warm black (tinted toward Strava orange) -->
+  <!-- Background: very dark warm black (tinted toward the accent orange) -->
   <rect width="512" height="512" fill="#0f0804"/>
 
   <!-- Subtle coordinate grid — very low opacity, orange-tinted -->

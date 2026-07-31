@@ -19,8 +19,10 @@
       --ink-2: oklch(68% 0.009 250);
       --ink-3: oklch(55% 0.007 250);
 
-      --strava:    oklch(62% 0.22  30);
-      --strava-bg: oklch(20% 0.07  30);
+      /* Product accent (RunCoach) */
+      --accent:    oklch(62% 0.22  30);
+      --accent-bg: oklch(20% 0.07  30);
+      /* Connector brand */
       --garmin:    oklch(57% 0.18 240);
       --garmin-bg: oklch(20% 0.07 240);
 
@@ -280,7 +282,6 @@
     .btn-island:hover:not(:disabled)  { transform: translateY(-2px); }
     .btn-island:active:not(:disabled) { transform: scale(0.97); }
 
-    .btn-island--strava { background: var(--strava); color: #fff; }
     .btn-island--garmin { background: var(--garmin); color: #fff; }
 
     /* The nested icon circle — physically pressed into the button */

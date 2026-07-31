@@ -6,29 +6,23 @@
   /* ── Dashboard shell ─────────────────────────────────────── */
   .dash {
     width: 100%;
-    max-width: 840px;
+    max-width: 560px;
     position: relative;
     z-index: 1;
     animation: fade-up 0.35s var(--ease) both;
   }
 
-  /* ── Masthead — editorial split layout ───────────────────── */
+  /* ── Masthead — editorial stack ──────────────────────────── */
   .masthead {
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 40px;
-    padding-bottom: 36px;
-  }
-  .masthead__brand {
-    display: flex;
-    align-items: flex-end;
-    gap: 20px;
-    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-bottom: 32px;
   }
   .masthead__title {
     font-family: 'Bodoni Moda', serif;
-    font-size: 5.5rem;
+    font-size: 4rem;
     font-weight: 900;
     letter-spacing: -0.015em;
     line-height: 0.9;
@@ -36,23 +30,20 @@
     margin: 0;
   }
   .masthead__tagline {
-    max-width: 22ch;
-    text-align: right;
+    max-width: 38ch;
     font-size: 0.82rem;
     color: var(--ink-3);
     line-height: 1.7;
-    align-self: flex-end;
     margin: 0;
-    padding-bottom: 10px;
   }
 
-  /* Gradient rule: Strava orange → transparent → Garmin blue */
+  /* Gradient rule: product accent → transparent → Garmin blue */
   .masthead-rule {
     height: 1px;
     margin: 36px 0 44px;
     background: linear-gradient(
       90deg,
-      var(--strava) 0%,
+      var(--accent) 0%,
       oklch(62% 0.22 30  / 0.22) 28%,
       transparent 50%,
       oklch(57% 0.18 240 / 0.22) 72%,
@@ -65,19 +56,6 @@
     border-radius: 18px;
     padding: 1.5px;
     animation: fade-up 0.35s var(--ease) both;
-  }
-  .conn-shell:nth-child(2) { animation-delay: 0.09s; }
-
-  .conn-shell--strava {
-    background: linear-gradient(
-      145deg,
-      oklch(62% 0.22 30  / 0.32) 0%,
-      oklch(22% 0.013 250 / 0.55) 55%,
-      oklch(15% 0.009 250 / 0.20) 100%
-    );
-    box-shadow:
-      0 0 52px -16px oklch(62% 0.22 30 / 0.14),
-      0 28px 60px -18px rgba(0, 0, 0, 0.50);
   }
   .conn-shell--garmin {
     background: linear-gradient(
@@ -120,7 +98,6 @@
     );
     z-index: 0;
   }
-  .conn--strava { --spot-color: oklch(62% 0.22 30  / 0.06); }
   .conn--garmin { --spot-color: oklch(57% 0.18 240 / 0.07); }
   .conn > * { position: relative; z-index: 1; }
 
@@ -133,7 +110,6 @@
     text-transform: uppercase;
     margin-bottom: 16px;
   }
-  .conn--strava .conn__brand { color: var(--strava); }
   .conn--garmin .conn__brand { color: var(--garmin); }
 
   .conn p {
@@ -160,10 +136,10 @@
     align-items: center;
   }
 
-  /* ── Connectors grid ──────────────────────────────────────── */
+  /* ── Connectors stack ─────────────────────────────────────── */
   .connectors {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
   }
 
@@ -179,10 +155,8 @@
 
   /* ── Responsive ───────────────────────────────────────────── */
   @media (max-width: 620px) {
-    .masthead            { flex-direction: column; align-items: flex-start; gap: 16px; }
-    .masthead__tagline   { text-align: left; max-width: none; }
-    .masthead__title     { font-size: 3.2rem; }
-    .connectors          { grid-template-columns: 1fr; }
+    .masthead__tagline { max-width: none; }
+    .masthead__title   { font-size: 3.2rem; }
   }
 </style>
 {% endblock %}
@@ -192,28 +166,22 @@
 
   {# ── Masthead ────────────────────────────────────────────── #}
   <header class="masthead">
-    <div class="masthead__brand">
-      <div>
-        {# Animated ECG logomark — trace draws on load #}
-        <svg width="52" height="52" viewBox="0 0 52 52" fill="none"
-             aria-hidden="true" style="display:block;margin-bottom:16px;">
-          <rect width="52" height="52" rx="12"
-                fill="oklch(16% 0.012 250)" stroke="oklch(27% 0.017 250)" stroke-width="1.5"/>
-          <polyline class="ecg-line"
-                    points="4,26 13,26 19,12 28,40 34,17 40,26 48,26"
-                    stroke="oklch(62% 0.22 30)" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
-        <div style="margin-bottom:14px;">
-          <div class="eyebrow-badge">
-            <span class="eyebrow-badge__dot" aria-hidden="true"></span>
-            MCP Server &nbsp;·&nbsp; v0.1
-          </div>
-        </div>
-        <h1 class="masthead__title">RunCoach MCP</h1>
-      </div>
+    {# Animated ECG logomark — trace draws on load #}
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none"
+         aria-hidden="true" style="display:block;">
+      <rect width="52" height="52" rx="12"
+            fill="oklch(16% 0.012 250)" stroke="oklch(27% 0.017 250)" stroke-width="1.5"/>
+      <polyline class="ecg-line"
+                points="4,26 13,26 19,12 28,40 34,17 40,26 48,26"
+                stroke="var(--accent)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <div class="eyebrow-badge">
+      <span class="eyebrow-badge__dot" aria-hidden="true"></span>
+      MCP Server &nbsp;·&nbsp; v0.1
     </div>
-    <p class="masthead__tagline">Verbinde deine Konten damit Claude deine Trainingsdaten analysieren kann.</p>
+    <h1 class="masthead__title">RunCoach MCP</h1>
+    <p class="masthead__tagline">Verbinde dein Garmin-Konto damit Claude deine Trainingsdaten analysieren kann.</p>
   </header>
 
   {# Brand-spanning gradient rule #}
@@ -221,48 +189,6 @@
 
   {# ── Connector panels ────────────────────────────────────── #}
   <div class="connectors">
-
-    {# ── Strava ── #}
-    <div class="conn-shell conn-shell--strava">
-      <div class="conn conn--strava">
-        <div class="conn__brand">Strava</div>
-
-        {% if connected %}
-          <div class="status status--on">
-            <span class="status__dot"></span>
-            Verbunden{% if athlete_name %} &middot; {{ athlete_name }}{% endif %}
-          </div>
-          <p>Strava-Konto verknüpft. Claude kann über den MCP-Server auf deine Aktivitäten zugreifen.</p>
-
-          <button class="btn btn-ghost" id="stravaCheckBtn" onclick="runCheck('strava')">Verbindung testen</button>
-          <div class="test-result" id="stravaResult"></div>
-
-          <hr class="divider">
-          <p class="small" style="margin-bottom:12px;">Konto wechseln oder Zugriff widerrufen?</p>
-          <form action="/auth/strava/disconnect" method="post">
-            <button type="submit" class="btn btn-danger">Strava trennen</button>
-          </form>
-
-        {% else %}
-          <div class="status status--off">
-            <span class="status__dot"></span>Nicht verbunden
-          </div>
-          <p>Erlaube RunCoach MCP den Lesezugriff auf deine Strava-Aktivitäten.</p>
-
-          <a href="/auth/strava/start" class="btn-island btn-island--strava">
-            <span>Mit Strava verbinden</span>
-            <span class="btn-island__icon" aria-hidden="true">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </span>
-          </a>
-          <hr class="divider">
-          <p class="small">Tokens werden mit AES-256 verschlüsselt gespeichert unter <code>~/.claude2strava/tokens.enc</code>.</p>
-        {% endif %}
-      </div>
-    </div>
 
     {# ── Garmin ── #}
     <div class="conn-shell conn-shell--garmin">
@@ -345,10 +271,10 @@
     btn.textContent = 'Prüfe…';
     out.textContent = '';
     try {
-      const res  = await fetch(provider === 'garmin' ? '/api/check-garmin' : '/api/check');
+      const res  = await fetch('/api/check-garmin');
       const data = await res.json();
       if (data.ok) {
-        const who = data.athlete || data.username || '';
+        const who = data.username || '';
         out.style.color = 'var(--green)';
         out.textContent  = 'Verbindung OK' + (who ? ' — ' + who : '');
       } else {
