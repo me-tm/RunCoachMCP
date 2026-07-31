@@ -44,7 +44,7 @@ Connect Claude to your Strava workout history and Garmin Connect wellness data v
 | Code interception | PKCE (`S256`) added to every Strava OAuth flow |
 | Secrets in logs | `Authorization` headers never logged |
 | Token expiry | Strava client auto-refreshes 60 s before expiry |
-| Garmin password | Never stored — only bearer tokens (di_token + refresh) are persisted |
+| Garmin password | Never stored — only bearer tokens (di_token + refresh) and the profile name are persisted |
 | Garmin 2FA | MFA state held in server memory only; opaque session ID in HttpOnly cookie |
 | Local-only web UI | FastAPI binds to `127.0.0.1` only |
 
@@ -106,7 +106,7 @@ Open [http://localhost:8080](http://localhost:8080) and click **Connect with Str
 
 With the web UI running, click **Connect Garmin** on the dashboard (or go to [http://localhost:8080/auth/garmin](http://localhost:8080/auth/garmin)). Enter your Garmin Connect email and password.
 
-If your account has **two-factor authentication** enabled, you'll be prompted for the code sent to your email or authenticator app. Your Garmin password is never stored — only the session bearer tokens are encrypted and saved to `~/.claude2strava/garmin_session.enc`.
+If your account has **two-factor authentication** enabled, you'll be prompted for the code sent to your email or authenticator app. Your Garmin password is never stored — only the session bearer tokens and your Garmin profile name (needed for the sleep/daily-stats endpoints) are encrypted and saved to `~/.claude2strava/garmin_session.enc`.
 
 Garmin sessions last approximately 30 days. If a session expires, reconnect through the dashboard.
 
@@ -148,7 +148,7 @@ Restart Claude Desktop. The MCP server will start automatically when Claude laun
 
 | Tool | What it does |
 |---|---|
-| `check_garmin_connection` | Verify Garmin is connected, show display name |
+| `check_garmin_connection` | Verify Garmin is connected, show the athlete name |
 | `get_garmin_sleep` | Sleep stages (deep/light/REM/awake), HRV, SpO2, respiration for a date |
 | `get_garmin_hrv` | Overnight HRV average, weekly avg, status, and 5-min sample readings |
 | `get_garmin_daily_stats` | Steps, resting HR, body battery, stress, calories for a date |

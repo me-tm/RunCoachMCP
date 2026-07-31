@@ -18,8 +18,19 @@ MFA flow (when Garmin triggers 2FA)
 2. Store mfa_state_dict server-side (in-memory, per session_id cookie)
 3. User submits 2FA code → resume_login(mfa_state_dict, code)
 4. Persist tokens → done
+
+Display name
+------------------------------------
+garminconnect sets api.display_name only inside login()/resume_login().
+Restoring a session via client.loads() leaves it None, which breaks every
+endpoint that interpolates it into the URL — get_stats() raises
+"Display name is not set", get_sleep_data() requests .../None and gets a 403.
+We therefore persist the display name with the session and re-attach it on
+every restore (fetching it once from the social profile if it is missing).
 """
 
+from collections.abc import Callable
+from dataclasses import replace
 from datetime import date, timedelta
 from typing import Any
 
@@ -36,6 +47,10 @@ from .session_store import (
     GarminSessionExpiredError,
     GarminSessionStore,
 )
+
+
+# Garmin endpoint holding displayName / fullName of the logged-in user
+SOCIAL_PROFILE_PATH = "/userprofile-service/socialProfile"
 
 
 # ── Auth helpers (called by the web UI routes) ─────────────────────────────────
@@ -71,6 +86,31 @@ def restore_session(api: "Garmin", token_json: str) -> None:
     api.client.loads(token_json)
 
 
+def fetch_profile_names(api: "Garmin") -> tuple[str | None, str | None]:
+    """Read (displayName, fullName) from the social profile endpoint."""
+    profile = api.connectapi(SOCIAL_PROFILE_PATH)
+    if not isinstance(profile, dict):
+        return None, None
+    return profile.get("displayName"), profile.get("fullName")
+
+
+def profile_names(api: "Garmin") -> tuple[str | None, str | None]:
+    """
+    (displayName, fullName) of a freshly logged-in api instance.
+
+    login()/resume_login() normally set both; fall back to the social profile
+    endpoint so the caller can persist them with the session.
+    """
+    display_name = getattr(api, "display_name", None)
+    full_name = getattr(api, "full_name", None)
+    if display_name:
+        return display_name, full_name
+    try:
+        return fetch_profile_names(api)
+    except Exception:
+        return None, None
+
+
 # ── Client ─────────────────────────────────────────────────────────────────────
 
 class GarminClient:
@@ -92,12 +132,44 @@ class GarminClient:
             raise GarminSessionExpiredError(
                 "Garmin-Session ungültig — bitte über http://localhost:8080 neu verbinden."
             ) from exc
+        self._attach_display_name(api, session_data)
         return api
 
+    def _attach_display_name(self, api: "Garmin", session_data: GarminSessionData) -> None:
+        """
+        Restore api.display_name / api.full_name after a token-only restore.
+
+        Without this, get_stats() and get_sleep_data() build URLs from a display
+        name that is None. Sessions stored before this fix carry no display name,
+        so we fetch it once from the social profile and write it back.
+        """
+        display_name = session_data.display_name
+        full_name = session_data.full_name
+
+        if not display_name:
+            display_name, full_name = fetch_profile_names(api)
+            if display_name:
+                self._store.save(
+                    replace(session_data, display_name=display_name, full_name=full_name)
+                )
+
+        if not display_name:
+            raise GarminSessionExpiredError(
+                "Garmin-Anzeigename konnte nicht ermittelt werden — bitte über "
+                "http://localhost:8080 neu verbinden."
+            )
+
+        api.display_name = display_name
+        api.full_name = full_name
+
     def _call(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
+        return self._invoke(lambda api: getattr(api, method_name)(*args, **kwargs))
+
+    def _invoke(self, fn: Callable[["Garmin"], Any]) -> Any:
+        """Run fn against a restored api instance, translating Garmin errors."""
         try:
             api = self._get_api()
-            return getattr(api, method_name)(*args, **kwargs)
+            return fn(api)
         except (GarminNotConnectedError, GarminSessionExpiredError):
             raise
         except GarminConnectAuthenticationError as exc:
@@ -112,8 +184,20 @@ class GarminClient:
     # ── Public data methods (synchronous) ──────────────────────────────────────
 
     def check_connection(self) -> dict:
-        """Verify the stored session is valid by fetching the user profile."""
-        return self._call("get_user_profile")
+        """
+        Verify the stored session is valid by fetching the social profile.
+        Returns display_name, full_name and user_id.
+        """
+        def _fetch(api: "Garmin") -> dict:
+            profile = api.connectapi(SOCIAL_PROFILE_PATH)
+            profile = profile if isinstance(profile, dict) else {}
+            return {
+                "display_name": api.display_name,
+                "full_name":    api.full_name or profile.get("fullName"),
+                "user_id":      profile.get("userProfileId") or profile.get("profileId"),
+            }
+
+        return self._invoke(_fetch)
 
     def get_sleep(self, cdate: str) -> dict:
         """
@@ -185,10 +269,16 @@ class GarminClient:
         Fetch basic user profile data: age, height, weight, gender, birthdate.
         Sourced from /userprofile-service/userprofile/user-settings → userData.
         """
-        raw = self._call("get_user_profile")
+        # user-settings has no displayName — that lives on the social profile,
+        # which _get_api() has already attached to the api instance.
+        def _fetch(api: "Garmin") -> tuple[str | None, str | None, Any]:
+            return api.display_name, api.full_name, api.get_user_profile()
+
+        display_name, full_name, raw = self._invoke(_fetch)
         user_data = raw.get("userData", {}) if isinstance(raw, dict) else {}
         return {
-            "display_name":  raw.get("displayName") if isinstance(raw, dict) else None,
+            "display_name":  display_name,   # Garmin-internal ID used in API URLs
+            "full_name":     full_name,      # human-readable name
             "age":           user_data.get("age"),
             "height_cm":     user_data.get("height"),
             "weight_kg":     user_data.get("weight") / 1000 if user_data.get("weight") is not None else None,
@@ -223,7 +313,8 @@ class GarminClient:
                 })
             except (GarminSessionExpiredError, GarminNotConnectedError, RuntimeError):
                 raise
-            except Exception:
-                results.append({"date": cdate, "error": "no data"})
+            except Exception as exc:
+                # Report the real cause instead of masking every failure as "no data"
+                results.append({"date": cdate, "error": f"{type(exc).__name__}: {exc}"})
             current += timedelta(days=1)
         return results

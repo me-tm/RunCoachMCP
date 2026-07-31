@@ -315,7 +315,8 @@ async def get_starred_segments() -> list[dict]:
 async def check_garmin_connection() -> dict:
     """
     Verify that Garmin Connect is linked and the session is still valid.
-    Returns the Garmin display name on success.
+    Returns the athlete's name on success (display_name is Garmin's internal
+    profile ID, not a readable name).
     Call this first before using other Garmin tools.
     """
     try:
@@ -325,8 +326,9 @@ async def check_garmin_connection() -> dict:
         )
         return {
             "connected": True,
-            "display_name": profile.get("displayName") or profile.get("userName", ""),
-            "user_id": profile.get("userId"),
+            "name": profile.get("full_name") or profile.get("display_name", ""),
+            "display_name": profile.get("display_name"),   # Garmin-internal profile ID
+            "user_id": profile.get("user_id"),
         }
     except GarminNotConnectedError as exc:
         return {"connected": False, "error": str(exc)}
@@ -513,8 +515,9 @@ async def get_garmin_user_profile() -> dict:
     """
     Get basic user profile data from Garmin Connect.
 
-    Returns display_name, age, height_cm, weight_kg (last recorded), gender,
-    and birth_date. Useful as baseline context for training load calculations,
+    Returns full_name, age, height_cm, weight_kg (last recorded), gender,
+    and birth_date (display_name is Garmin's internal profile ID).
+    Useful as baseline context for training load calculations,
     VO2max estimates, and health metric interpretation.
     """
     client = _get_garmin()
