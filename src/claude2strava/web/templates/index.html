@@ -6,7 +6,7 @@
   /* ── Dashboard shell ─────────────────────────────────────── */
   .dash {
     width: 100%;
-    max-width: 560px;
+    max-width: 840px;
     position: relative;
     z-index: 1;
     animation: fade-up 0.35s var(--ease) both;
@@ -37,7 +37,7 @@
     margin: 0;
   }
 
-  /* Gradient rule: product accent → transparent → Garmin blue */
+  /* Gradient rule: product accent → Garmin blue → COROS teal */
   .masthead-rule {
     height: 1px;
     margin: 36px 0 44px;
@@ -66,6 +66,17 @@
     );
     box-shadow:
       0 0 52px -16px oklch(57% 0.18 240 / 0.14),
+      0 28px 60px -18px rgba(0, 0, 0, 0.50);
+  }
+  .conn-shell--coros {
+    background: linear-gradient(
+      145deg,
+      oklch(62% 0.20 190 / 0.32) 0%,
+      oklch(22% 0.013 250 / 0.55) 55%,
+      oklch(15% 0.009 250 / 0.20) 100%
+    );
+    box-shadow:
+      0 0 52px -16px oklch(62% 0.20 190 / 0.14),
       0 28px 60px -18px rgba(0, 0, 0, 0.50);
   }
 
@@ -99,6 +110,7 @@
     z-index: 0;
   }
   .conn--garmin { --spot-color: oklch(57% 0.18 240 / 0.07); }
+  .conn--coros  { --spot-color: oklch(62% 0.20 190 / 0.07); }
   .conn > * { position: relative; z-index: 1; }
 
   /* ── Panel internals ──────────────────────────────────────── */
@@ -111,6 +123,7 @@
     margin-bottom: 16px;
   }
   .conn--garmin .conn__brand { color: var(--garmin); }
+  .conn--coros  .conn__brand { color: var(--coros);  }
 
   .conn p {
     font-size: 0.875rem;
@@ -132,14 +145,28 @@
   .action-row {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
+  }
+  /* Username line — single line, truncated */
+  .conn__username {
+    font-size: 0.75rem;
+    color: var(--ink-3);
+    margin: 4px 0 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  /* Push actions to the bottom of the card regardless of content height */
+  .conn__actions {
+    margin-top: auto;
   }
 
   /* ── Connectors stack ─────────────────────────────────────── */
   .connectors {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
   }
 
@@ -155,6 +182,7 @@
 
   /* ── Responsive ───────────────────────────────────────────── */
   @media (max-width: 620px) {
+    .connectors        { grid-template-columns: 1fr; }
     .masthead__tagline { max-width: none; }
     .masthead__title   { font-size: 3.2rem; }
   }
@@ -178,10 +206,10 @@
     </svg>
     <div class="eyebrow-badge">
       <span class="eyebrow-badge__dot" aria-hidden="true"></span>
-      MCP Server &nbsp;·&nbsp; v0.1
+      MCP Server &nbsp;·&nbsp; v0.2
     </div>
     <h1 class="masthead__title">RunCoach MCP</h1>
-    <p class="masthead__tagline">Verbinde dein Garmin-Konto damit Claude deine Trainingsdaten analysieren kann.</p>
+    <p class="masthead__tagline">Verbinde deine Konten damit Claude deine Trainingsdaten analysieren kann.</p>
   </header>
 
   {# Brand-spanning gradient rule #}
@@ -196,41 +224,130 @@
         <div class="conn__brand">Garmin Connect</div>
 
         {% if garmin_connected %}
-          <div class="status status--on">
-            <span class="status__dot"></span>
-            Verbunden{% if garmin_username %} &middot; {{ garmin_username }}{% endif %}
-          </div>
-          <p>Garmin-Konto verknüpft. Claude hat Zugriff auf HRV, Schlaf und tägliche Wellness-Daten.</p>
+          <div class="status status--on"><span class="status__dot"></span>Verbunden</div>
+          {% if garmin_username %}<div class="conn__username">{{ garmin_username }}</div>{% endif %}
+          <p>Garmin-Konto verknüpft. Claude hat Zugriff auf HRV, Schlaf und Wellness-Daten.</p>
 
-          <button class="btn btn-ghost" id="garminCheckBtn" onclick="runCheck('garmin')">Verbindung testen</button>
-          <div class="test-result" id="garminResult"></div>
-
-          <hr class="divider">
-          <p class="small" style="margin-bottom:12px;">Session abgelaufen oder Konto wechseln?</p>
-          <div class="action-row">
-            <a href="/auth/garmin" class="btn btn-secondary">Neu verbinden</a>
-            <form action="/auth/garmin/disconnect" method="post">
-              <button type="submit" class="btn btn-danger">Garmin trennen</button>
-            </form>
+          <div class="conn__actions">
+            <button class="btn-island btn-island--garmin" id="garminCheckBtn" onclick="runCheck('garmin')">
+              <span>Verbindung testen</span>
+              <span class="btn-island__icon" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+            </button>
+            <div class="test-result" id="garminResult"></div>
+            <hr class="divider">
+            <div class="action-row">
+              <a href="/auth/garmin" class="btn-island btn-island--garmin" style="flex:1;">
+                <span>Neu verbinden</span>
+                <span class="btn-island__icon" aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </span>
+              </a>
+              <form action="/auth/garmin/disconnect" method="post" style="flex-shrink:0;">
+                <button type="submit" class="btn-island btn-island--danger">
+                  <span>Trennen</span>
+                  <span class="btn-island__icon" aria-hidden="true">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </span>
+                </button>
+              </form>
+            </div>
           </div>
 
         {% else %}
-          <div class="status status--off">
-            <span class="status__dot"></span>Nicht verbunden
-          </div>
-          <p>Verbinde Garmin Connect um HRV, Schlaf, Body Battery und Stress-Daten zu analysieren.</p>
+          <div class="status status--off"><span class="status__dot"></span>Nicht verbunden</div>
+          <p>Verbinde Garmin Connect für HRV, Schlaf, Body Battery und Stress-Daten.</p>
 
-          <a href="/auth/garmin" class="btn-island btn-island--garmin">
-            <span>Mit Garmin verbinden</span>
-            <span class="btn-island__icon" aria-hidden="true">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </span>
-          </a>
-          <hr class="divider">
-          <p class="small">Session-Cookies werden verschlüsselt gespeichert unter <code>~/.claude2strava/garmin_session.enc</code>. Kein Passwort wird gespeichert.</p>
+          <div class="conn__actions">
+            <a href="/auth/garmin" class="btn-island btn-island--garmin">
+              <span>Mit Garmin verbinden</span>
+              <span class="btn-island__icon" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </span>
+            </a>
+            <hr class="divider">
+            <p class="small">Session-Cookies verschlüsselt unter <code>~/.claude2strava/garmin_session.enc</code>. Kein Passwort gespeichert.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── COROS ── #}
+    <div class="conn-shell conn-shell--coros">
+      <div class="conn conn--coros">
+        <div class="conn__brand">COROS</div>
+
+        {% if coros_connected %}
+          <div class="status status--on"><span class="status__dot"></span>Verbunden</div>
+          {% if coros_nickname %}<div class="conn__username">{{ coros_nickname }}</div>{% endif %}
+          <p>COROS-Konto verknüpft. Claude hat Zugriff auf Aktivitäten, Schlaf und Trainingslast.</p>
+
+          <div class="conn__actions">
+            <button class="btn-island btn-island--coros" id="corosCheckBtn" onclick="runCheck('coros')">
+              <span>Verbindung testen</span>
+              <span class="btn-island__icon" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+            </button>
+            <div class="test-result" id="corosResult"></div>
+            <hr class="divider">
+            <div class="action-row">
+              <a href="/auth/coros/start" class="btn-island btn-island--coros" style="flex:1;">
+                <span>Neu verbinden</span>
+                <span class="btn-island__icon" aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </span>
+              </a>
+              <form action="/auth/coros/disconnect" method="post" style="flex-shrink:0;">
+                <button type="submit" class="btn-island btn-island--danger">
+                  <span>Trennen</span>
+                  <span class="btn-island__icon" aria-hidden="true">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+        {% else %}
+          <div class="status status--off"><span class="status__dot"></span>Nicht verbunden</div>
+          <p>Verbinde COROS für Aktivitäten, Schlaf und Trainingsbelastungs-Daten.</p>
+
+          <div class="conn__actions">
+            <a href="/auth/coros/start" class="btn-island btn-island--coros">
+              <span>Mit COROS verbinden</span>
+              <span class="btn-island__icon" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </span>
+            </a>
+            <hr class="divider">
+            <p class="small">Tokens verschlüsselt unter <code>~/.claude2strava/coros_tokens.enc</code>.</p>
+          </div>
         {% endif %}
       </div>
     </div>
@@ -267,11 +384,13 @@
   async function runCheck(provider) {
     const btn = document.getElementById(provider + 'CheckBtn');
     const out = document.getElementById(provider + 'Result');
+    // Write to the label span only — writing to the button would drop its icon span.
+    const label = btn.querySelector('span:not(.btn-island__icon)');
     btn.disabled = true;
-    btn.textContent = 'Prüfe…';
+    label.textContent = 'Prüfe…';
     out.textContent = '';
     try {
-      const res  = await fetch('/api/check-garmin');
+      const res  = await fetch(provider === 'coros' ? '/api/check-coros' : '/api/check-garmin');
       const data = await res.json();
       if (data.ok) {
         const who = data.username || '';
@@ -286,7 +405,7 @@
       out.textContent  = 'Anfrage fehlgeschlagen';
     }
     btn.disabled = false;
-    btn.textContent = 'Verbindung testen';
+    label.textContent = 'Verbindung testen';
   }
 </script>
 {% endblock %}

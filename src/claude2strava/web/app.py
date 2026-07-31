@@ -6,6 +6,13 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 
 from ..config import get_settings
+from ..coros.auth import (
+    build_auth_url as coros_build_auth_url,
+    exchange_code as coros_exchange_code,
+    generate_state as coros_generate_state,
+    CorosAuthError,
+)
+from ..coros.token_store import CorosNotConnectedError, CorosTokenData, CorosTokenStore
 from ..crypto import Crypto
 from ..garmin.client import (
     GarminClient,
@@ -46,20 +53,27 @@ _pending_garmin: dict[str, object] = {}
 # Lazily built singletons
 _settings      = None
 _garmin_store  = None
+_coros_store   = None
 _crypto        = None
 
 
 def _init_deps() -> None:
-    global _settings, _garmin_store, _crypto
+    global _settings, _garmin_store, _coros_store, _crypto
     if _settings is None:
         _settings = get_settings()
         _crypto = Crypto(_settings.get_fernet_key())
         _garmin_store = GarminSessionStore(_settings.token_dir, _crypto)
+        _coros_store  = CorosTokenStore(_settings.token_dir, _crypto)
 
 
 def _get_garmin_store() -> GarminSessionStore:
     _init_deps()
     return _garmin_store
+
+
+def _get_coros_store() -> CorosTokenStore:
+    _init_deps()
+    return _coros_store
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -77,10 +91,21 @@ async def index(request: Request):
         except Exception:
             garmin_connected = False
 
+    # COROS status
+    coros_connected = _coros_store.exists()
+    coros_nickname = ""
+    if coros_connected:
+        try:
+            coros_nickname = _coros_store.load().open_id
+        except Exception:
+            coros_connected = False
+
     return _render(
         "index.html",
         garmin_connected=garmin_connected,
         garmin_username=garmin_username,
+        coros_connected=coros_connected,
+        coros_nickname=coros_nickname,
     )
 
 
@@ -191,6 +216,88 @@ async def api_check_garmin():
         return JSONResponse({"ok": False, "error": str(exc)})
     except Exception as exc:
         return JSONResponse({"ok": False, "error": f"Fehler: {exc}"})
+
+
+# ── COROS OAuth ───────────────────────────────────────────────────────────────
+
+# COROS OAuth: session_id → state string
+_pending_coros: dict[str, str] = {}
+
+
+@app.get("/auth/coros/start")
+async def coros_auth_start():
+    _init_deps()
+    state = coros_generate_state()
+    session_id = secrets.token_urlsafe(16)
+    _pending_coros[session_id] = state
+    auth_url = coros_build_auth_url(_settings.coros_client_id, state, _settings.web_port)
+    redirect = RedirectResponse(url=auth_url, status_code=302)
+    redirect.set_cookie(key="coros_sid", value=session_id, httponly=True, samesite="lax", max_age=600)
+    return redirect
+
+
+@app.get("/auth/coros/callback", response_class=HTMLResponse)
+async def coros_auth_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+    _init_deps()
+    coros_store = _get_coros_store()
+    session_id = request.cookies.get("coros_sid")
+    expected_state = _pending_coros.pop(session_id, None) if session_id else None
+
+    if error:
+        return _render("coros_callback.html", success=False, message=f"COROS denied access: {error}")
+    if not expected_state or expected_state != state:
+        return _render("coros_callback.html", success=False, message="Invalid OAuth state — possible CSRF. Please try again.")
+    if not code:
+        return _render("coros_callback.html", success=False, message="No authorization code received.")
+
+    try:
+        import httpx
+        import time
+        async with httpx.AsyncClient() as http:
+            token_data = await coros_exchange_code(
+                _settings.coros_client_id,
+                _settings.coros_client_secret,
+                code,
+                _settings.web_port,
+                http_client=http,
+            )
+    except CorosAuthError as exc:
+        return _render("coros_callback.html", success=False, message=str(exc))
+
+    now = int(time.time())
+    coros_store.save(CorosTokenData(
+        open_id=token_data.get("openId", ""),
+        access_token=token_data["accessToken"],
+        refresh_token=token_data["refreshToken"],
+        expires_at=now + int(token_data.get("tokenExpiresIn", 86400)),
+        refresh_expires_at=now + int(token_data.get("refreshTokenExpiresIn", 7776000)),
+    ))
+    nickname = token_data.get("openId", "")
+    response = _render("coros_callback.html", success=True, nickname=nickname)
+    response.delete_cookie("coros_sid")
+    return response
+
+
+@app.post("/auth/coros/disconnect")
+async def coros_disconnect():
+    coros_store = _get_coros_store()
+    coros_store.delete()
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/api/check-coros")
+async def api_check_coros():
+    """Verify stored COROS tokens are present and not expired."""
+    coros_store = _get_coros_store()
+    if not coros_store.exists():
+        return JSONResponse({"ok": False, "error": "Nicht verbunden — erst über Dashboard verbinden."})
+    try:
+        data = coros_store.load()
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": f"Token-Fehler: {exc}"})
+    if data.refresh_is_expired():
+        return JSONResponse({"ok": False, "error": "COROS refresh token abgelaufen — bitte erneut verbinden."})
+    return JSONResponse({"ok": True, "username": data.open_id})
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────

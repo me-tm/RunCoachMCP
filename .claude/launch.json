@@ -6,6 +6,12 @@
       "runtimeExecutable": "/opt/homebrew/bin/uv",
       "runtimeArgs": ["run", "python", "-m", "http.server", "4321"],
       "port": 4321
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "/opt/homebrew/bin/uv",
+      "runtimeArgs": ["run", "python", "-m", "claude2strava.web.app"],
+      "port": 8080
     }
   ]
 }

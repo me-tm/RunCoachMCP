@@ -25,6 +25,8 @@
       /* Connector brand */
       --garmin:    oklch(57% 0.18 240);
       --garmin-bg: oklch(20% 0.07 240);
+      --coros:     oklch(62% 0.20 190);
+      --coros-bg:  oklch(19% 0.08 190);
 
       --green:    oklch(67% 0.19 145);
       --green-bg: oklch(19% 0.07 145);
@@ -282,7 +284,10 @@
     .btn-island:hover:not(:disabled)  { transform: translateY(-2px); }
     .btn-island:active:not(:disabled) { transform: scale(0.97); }
 
-    .btn-island--garmin { background: var(--garmin); color: #fff; }
+    .btn-island--garmin  { background: var(--garmin); color: #fff; }
+    .btn-island--coros   { background: var(--coros);  color: #fff; }
+    .btn-island--danger  { background: transparent; color: var(--red); border: 1px solid oklch(28% 0.10 25); }
+    .btn-island--danger:hover:not(:disabled) { background: var(--red-bg); border-color: var(--red); transform: translateY(-2px); }
 
     /* The nested icon circle — physically pressed into the button */
     .btn-island__icon {

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}COROS — {% if success %}Verbunden{% else %}Fehler{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="box">
+    {% if success %}
+      <svg class="icon-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <h1>COROS verbunden</h1>
+      <p>Token gespeichert für <strong style="color:var(--ink);">{{ nickname }}</strong>. Claude kann jetzt auf Aktivitäten, Schlaf- und Trainingslast-Daten zugreifen.</p>
+      <hr class="divider">
+      <p class="small" style="margin-bottom:16px;">Du kannst dieses Fenster schließen. Starte Claude Desktop neu, falls der MCP-Server bereits läuft.</p>
+      <a href="/" class="btn btn-secondary btn--full">Zum Dashboard</a>
+    {% else %}
+      <svg class="icon-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      <h1>Verbindung fehlgeschlagen</h1>
+      <p>{{ message }}</p>
+      <hr class="divider">
+      <a href="/" class="btn btn-secondary btn--full">Zurück zum Dashboard</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
