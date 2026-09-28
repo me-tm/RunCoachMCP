@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}RunCoach MCP{% endblock %}
+{% block title %}Claude2Garmin{% endblock %}
 
 {% block head %}
 <style>
@@ -37,16 +37,14 @@
     margin: 0;
   }
 
-  /* Gradient rule: product accent → Garmin blue → COROS teal */
+  /* Gradient rule: product accent → Garmin blue */
   .masthead-rule {
     height: 1px;
     margin: 36px 0 44px;
     background: linear-gradient(
       90deg,
       var(--accent) 0%,
-      oklch(62% 0.22 30  / 0.22) 28%,
-      transparent 50%,
-      oklch(57% 0.18 240 / 0.22) 72%,
+      oklch(62% 0.22 30  / 0.22) 40%,
       var(--garmin) 100%
     );
   }
@@ -68,18 +66,6 @@
       0 0 52px -16px oklch(57% 0.18 240 / 0.14),
       0 28px 60px -18px rgba(0, 0, 0, 0.50);
   }
-  .conn-shell--coros {
-    background: linear-gradient(
-      145deg,
-      oklch(62% 0.20 190 / 0.32) 0%,
-      oklch(22% 0.013 250 / 0.55) 55%,
-      oklch(15% 0.009 250 / 0.20) 100%
-    );
-    box-shadow:
-      0 0 52px -16px oklch(62% 0.20 190 / 0.14),
-      0 28px 60px -18px rgba(0, 0, 0, 0.50);
-  }
-
   /* ── Connector inner card (Double-Bezel inner core) ──────── */
   .conn {
     position: relative;
@@ -110,7 +96,6 @@
     z-index: 0;
   }
   .conn--garmin { --spot-color: oklch(57% 0.18 240 / 0.07); }
-  .conn--coros  { --spot-color: oklch(62% 0.20 190 / 0.07); }
   .conn > * { position: relative; z-index: 1; }
 
   /* ── Panel internals ──────────────────────────────────────── */
@@ -123,7 +108,6 @@
     margin-bottom: 16px;
   }
   .conn--garmin .conn__brand { color: var(--garmin); }
-  .conn--coros  .conn__brand { color: var(--coros);  }
 
   .conn p {
     font-size: 0.875rem;
@@ -166,7 +150,8 @@
   /* ── Connectors stack ─────────────────────────────────────── */
   .connectors {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    max-width: 400px;
     gap: 20px;
   }
 
@@ -182,7 +167,6 @@
 
   /* ── Responsive ───────────────────────────────────────────── */
   @media (max-width: 620px) {
-    .connectors        { grid-template-columns: 1fr; }
     .masthead__tagline { max-width: none; }
     .masthead__title   { font-size: 3.2rem; }
   }
@@ -208,8 +192,8 @@
       <span class="eyebrow-badge__dot" aria-hidden="true"></span>
       MCP Server &nbsp;·&nbsp; v0.2
     </div>
-    <h1 class="masthead__title">RunCoach MCP</h1>
-    <p class="masthead__tagline">Verbinde deine Konten damit Claude deine Trainingsdaten analysieren kann.</p>
+    <h1 class="masthead__title">Claude2Garmin</h1>
+    <p class="masthead__tagline">Verbinde dein Garmin-Konto damit Claude deine Trainingsdaten analysieren kann.</p>
   </header>
 
   {# Brand-spanning gradient rule #}
@@ -279,74 +263,7 @@
               </span>
             </a>
             <hr class="divider">
-            <p class="small">Session-Cookies verschlüsselt unter <code>~/.claude2strava/garmin_session.enc</code>. Kein Passwort gespeichert.</p>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    {# ── COROS ── #}
-    <div class="conn-shell conn-shell--coros">
-      <div class="conn conn--coros">
-        <div class="conn__brand">COROS</div>
-
-        {% if coros_connected %}
-          <div class="status status--on"><span class="status__dot"></span>Verbunden</div>
-          {% if coros_nickname %}<div class="conn__username">{{ coros_nickname }}</div>{% endif %}
-          <p>COROS-Konto verknüpft. Claude hat Zugriff auf Aktivitäten, Schlaf und Trainingslast.</p>
-
-          <div class="conn__actions">
-            <button class="btn-island btn-island--coros" id="corosCheckBtn" onclick="runCheck('coros')">
-              <span>Verbindung testen</span>
-              <span class="btn-island__icon" aria-hidden="true">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-              </span>
-            </button>
-            <div class="test-result" id="corosResult"></div>
-            <hr class="divider">
-            <div class="action-row">
-              <a href="/auth/coros/start" class="btn-island btn-island--coros" style="flex:1;">
-                <span>Neu verbinden</span>
-                <span class="btn-island__icon" aria-hidden="true">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </span>
-              </a>
-              <form action="/auth/coros/disconnect" method="post" style="flex-shrink:0;">
-                <button type="submit" class="btn-island btn-island--danger">
-                  <span>Trennen</span>
-                  <span class="btn-island__icon" aria-hidden="true">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                  </span>
-                </button>
-              </form>
-            </div>
-          </div>
-
-        {% else %}
-          <div class="status status--off"><span class="status__dot"></span>Nicht verbunden</div>
-          <p>Verbinde COROS für Aktivitäten, Schlaf und Trainingsbelastungs-Daten.</p>
-
-          <div class="conn__actions">
-            <a href="/auth/coros/start" class="btn-island btn-island--coros">
-              <span>Mit COROS verbinden</span>
-              <span class="btn-island__icon" aria-hidden="true">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </span>
-            </a>
-            <hr class="divider">
-            <p class="small">Tokens verschlüsselt unter <code>~/.claude2strava/coros_tokens.enc</code>.</p>
+            <p class="small">Session-Cookies verschlüsselt unter <code>~/.claude2garmin/garmin_session.enc</code>. Kein Passwort gespeichert.</p>
           </div>
         {% endif %}
       </div>
@@ -390,7 +307,7 @@
     label.textContent = 'Prüfe…';
     out.textContent = '';
     try {
-      const res  = await fetch(provider === 'coros' ? '/api/check-coros' : '/api/check-garmin');
+      const res  = await fetch('/api/check-garmin');
       const data = await res.json();
       if (data.ok) {
         const who = data.username || '';

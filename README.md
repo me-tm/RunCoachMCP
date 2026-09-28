@@ -1,8 +1,8 @@
-# RunCoachMCP
+# Claude2Garmin
 
-Connect Claude to your Garmin Connect wellness data and COROS watch activity data via MCP. Ask Claude about your training load, sleep quality, HRV, body battery, recovery readiness, weight trends, and more.
+Connect Claude to your Garmin Connect wellness data via MCP. Ask Claude about your training load, sleep quality, HRV, body battery, recovery readiness, weight trends, and more.
 
-> Strava support has been removed from this project — use the [official Strava MCP connector](https://www.strava.com/settings/api) instead.
+> Strava and COROS support have been removed from this project — this connector is dedicated to Garmin Connect only. Use the [official Strava MCP connector](https://www.strava.com/settings/api) if you need Strava data.
 
 ## Architecture
 
@@ -13,27 +13,17 @@ Connect Claude to your Garmin Connect wellness data and COROS watch activity dat
 └─────────────────┘   session tokens      └─────────────┘
          │ save encrypted
          ▼
-  ~/.claude2strava/
+  ~/.claude2garmin/
     garmin_session.enc (AES-256)
-
-┌─────────────────┐     OAuth2            ┌─────────────┐
-│  localhost:8080 │ ───────────────────▶  │    COROS    │
-│  (FastAPI web)  │ ◀─────────────────── │  Open API   │
-└─────────────────┘     tokens            └─────────────┘
-         │ save encrypted
-         ▼
-  ~/.claude2strava/
-    coros_tokens.enc (AES-256)
 
 ┌─────────────────┐     MCP protocol     ┌──────────────┐
 │  Claude Desktop │ ───────────────────▶  │  MCP server  │
-│                 │ ◀─────────────────── │  (15 tools)  │
+│                 │ ◀─────────────────── │  (9 tools)   │
 └─────────────────┘     JSON results      └──────────────┘
-                                 │ reads tokens
+                                 │ reads/rewrites tokens
                                  ▼
-                          ~/.claude2strava/
+                          ~/.claude2garmin/
                             garmin_session.enc
-                            coros_tokens.enc
 ```
 
 ## Security
@@ -41,47 +31,32 @@ Connect Claude to your Garmin Connect wellness data and COROS watch activity dat
 | Concern | How it's handled |
 |---|---|
 | Tokens on disk | AES-256-GCM (Fernet) encrypted, file mode `0600` |
-| Token storage location | `~/.claude2strava/` — outside the repo |
-| CSRF on OAuth callback | Per-request `state` in an HttpOnly cookie, checked on the COROS callback |
+| Token storage location | `~/.claude2garmin/` — outside the repo |
 | Secrets in logs | `Authorization` headers never logged |
-| COROS token expiry | Access token auto-refreshes; refresh token valid ~90 days |
 | Garmin password | Never stored — only bearer tokens (di_token + refresh) and the profile name are persisted |
 | Garmin 2FA | MFA state held in server memory only; opaque session ID in HttpOnly cookie |
 | Local-only web UI | FastAPI binds to `127.0.0.1` only |
 
-Your credentials and encryption key live in `.env`, which is excluded by `.gitignore`.
+Your encryption key lives in `.env`, which is excluded by `.gitignore`.
 
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) — `brew install uv`
-- A Garmin Connect account (for sleep/HRV/recovery tools)
-- A COROS account (optional — only needed for COROS watch activity and training load tools)
+- A Garmin Connect account
 - [Claude Desktop](https://claude.ai/download)
 
 ## Setup
 
-### 1. Register a COROS Open API application (optional)
-
-1. Go to [open.coros.com](https://open.coros.com) and apply for developer access
-2. Create an application and set the **Redirect URI** to `http://localhost:8080/auth/coros/callback`
-3. Note your **Client ID** and **Client Secret**
-
-Skip this step if you only want Garmin data.
-
-### 2. Configure the project
+### 1. Configure the project
 
 ```bash
-cd /path/to/Claude2Strava
+cd /path/to/Claude2Garmin
 cp .env.example .env
 ```
 
 Edit `.env`:
 
 ```dotenv
-# Optional — only needed for COROS watch data
-COROS_CLIENT_ID=your_coros_client_id
-COROS_CLIENT_SECRET=your_coros_secret
-
 # Generate an encryption key (run once):
 # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 TOKEN_ENCRYPTION_KEY=<paste generated key here>
@@ -91,25 +66,21 @@ TOKEN_ENCRYPTION_KEY=<paste generated key here>
 WEB_SECRET_KEY=<paste generated key here>
 ```
 
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 uv sync
 ```
 
-### 4. Connect your accounts
+### 3. Connect your account
 
 ```bash
-uv run python -m claude2strava.web.app
+uv run python -m claude2garmin.web.app
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The dashboard shows both connectors — connect whichever you have.
+Open [http://localhost:8080](http://localhost:8080) and click **Mit Garmin verbinden**, then enter your Garmin Connect credentials. If your account has **two-factor authentication** enabled, you'll be prompted for the code sent to your email or authenticator app. Your password is never stored — only the session bearer tokens and your Garmin profile name (needed for the sleep/daily-stats endpoints) are encrypted and saved.
 
-**Garmin:** Click **Mit Garmin verbinden** and enter your Garmin Connect credentials. If your account has **two-factor authentication** enabled, you'll be prompted for the code sent to your email or authenticator app. Your password is never stored — only the session bearer tokens and your Garmin profile name (needed for the sleep/daily-stats endpoints) are encrypted and saved. Sessions last approximately 30 days.
-
-**COROS:** Click **Mit COROS verbinden** and authorise via the COROS OAuth page. Access tokens are auto-refreshed; the refresh token is valid for approximately 90 days.
-
-### 5. Configure Claude Desktop
+### 4. Configure Claude Desktop
 
 Add the MCP server to your Claude Desktop config file:
 
@@ -118,10 +89,10 @@ Add the MCP server to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "runcoach": {
+    "claude2garmin": {
       "command": "uv",
-      "args": ["run", "python", "-m", "claude2strava.mcp_server.server"],
-      "cwd": "/Users/you/Documents/GIT/Claude2Strava"
+      "args": ["run", "python", "-m", "claude2garmin.mcp_server.server"],
+      "cwd": "/Users/you/Documents/GIT/Claude2Garmin"
     }
   }
 }
@@ -130,8 +101,6 @@ Add the MCP server to your Claude Desktop config file:
 Restart Claude Desktop. The MCP server starts automatically when Claude launches.
 
 ## Available MCP Tools
-
-### Garmin Connect
 
 | Tool | What it does |
 |---|---|
@@ -145,17 +114,6 @@ Restart Claude Desktop. The MCP server starts automatically when Claude launches
 | `get_garmin_weight` | Weight, BMI, body fat, muscle mass for a single day |
 | `get_garmin_weight_range` | Body composition trend across a date range |
 
-### COROS
-
-| Tool | What it does |
-|---|---|
-| `check_coros_connection` | Verify COROS is connected, show athlete profile |
-| `list_coros_activities` | List watch activities in a date range (sport type, HR, distance, load) |
-| `get_coros_activity` | Full detail: HR zones, pace, power, elevation, aerobic/anaerobic effect |
-| `get_coros_daily_data` | Daily steps, calories, resting HR, and intensity minutes |
-| `get_coros_sleep` | Sleep score, stage breakdown, SpO2 per night across a date range |
-| `get_coros_training_load` | Daily training load (TRIMP-based), aerobic/anaerobic split, fitness/fatigue |
-
 ## Example Claude prompts
 
 ```
@@ -164,12 +122,6 @@ How was my sleep and HRV this week? Do I look recovered enough for a hard sessio
 Compare my body battery levels on days after long runs vs. rest days.
 
 Show my HRV trend over the last month and flag any nights below baseline.
-
-What's my training load trend over the last 4 weeks from my COROS watch?
-
-Compare my COROS sleep scores with my Garmin body battery readings — do they agree?
-
-How does my aerobic vs anaerobic training load split look this month?
 
 Plot my weight and body fat percentage across this training block.
 ```
@@ -181,11 +133,17 @@ Plot my weight and body fat percentage across this training block.
 uv run pytest -v
 
 # Run the web UI for authentication
-uv run python -m claude2strava.web.app
+uv run python -m claude2garmin.web.app
 ```
 
-## Token refresh
+## Session length
 
-**Garmin:** Sessions last approximately 30 days. Re-authenticate via [http://localhost:8080](http://localhost:8080) when prompted.
+Garmin's own Bearer access token is short-lived (~JWT with a `exp` claim of roughly an hour), refreshed automatically by the `garminconnect` library using a longer-lived refresh token. Garmin rotates that refresh token on every use — the old one stops working the moment a new one is issued.
 
-**COROS:** Access tokens are auto-refreshed transparently. The refresh token is valid for approximately 90 days — re-authenticate via the dashboard when it expires.
+Earlier versions of this project discarded that rotation: each MCP server process refreshed the token in memory but never wrote the new refresh token back to `garmin_session.enc`. The *next* process then tried to reuse an already-consumed refresh token, Garmin rejected it, and the user was forced back to an email/password login — often well before any real Garmin-side expiry.
+
+`GarminClient` now re-persists the current token pair to the encrypted session file after every Garmin API call whose tokens changed. As long as the MCP server (or the web dashboard's connection test) is used at least once before Garmin's refresh token would otherwise go stale, the session keeps renewing itself indefinitely — no fixed 30-day wall, and no need to reconnect through the dashboard unless the password changes, the session is revoked from the Garmin app, or the account goes untouched for an extended period.
+
+If a session ever does need to be re-established, do it via [http://localhost:8080](http://localhost:8080).
+
+> **Note:** if you're upgrading from `claude2strava`, your existing Garmin session at `~/.claude2strava/` is migrated automatically to `~/.claude2garmin/` on first run — no need to reconnect.

@@ -3,10 +3,10 @@
 .env.*
 !.env.example
 
-# Encrypted token storage (lives in ~/.claude2strava/ anyway, not here)
+# Encrypted token storage (lives in ~/.claude2garmin/ anyway, not here)
 *.enc
 tokens/
-.claude2strava/
+.claude2garmin/
 
 # Python
 __pycache__/

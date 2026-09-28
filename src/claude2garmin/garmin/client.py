@@ -117,7 +117,7 @@ class GarminClient:
     def __init__(self, session_store: GarminSessionStore) -> None:
         self._store = session_store
 
-    def _get_api(self) -> "Garmin":
+    def _get_api(self) -> tuple["Garmin", GarminSessionData]:
         """
         Create a Garmin API instance restored from encrypted stored tokens.
 
@@ -133,7 +133,7 @@ class GarminClient:
                 "Garmin-Session ungültig — bitte über http://localhost:8080 neu verbinden."
             ) from exc
         self._attach_display_name(api, session_data)
-        return api
+        return api, session_data
 
     def _attach_display_name(self, api: "Garmin", session_data: GarminSessionData) -> None:
         """
@@ -167,8 +167,10 @@ class GarminClient:
 
     def _invoke(self, fn: Callable[["Garmin"], Any]) -> Any:
         """Run fn against a restored api instance, translating Garmin errors."""
+        api = None
+        session_data = None
         try:
-            api = self._get_api()
+            api, session_data = self._get_api()
             return fn(api)
         except (GarminNotConnectedError, GarminSessionExpiredError):
             raise
@@ -180,6 +182,26 @@ class GarminClient:
             raise RuntimeError("Garmin rate limit erreicht — bitte kurz warten.") from exc
         except GarminConnectConnectionError as exc:
             raise RuntimeError(f"Garmin-Verbindungsfehler: {exc}") from exc
+        finally:
+            if api is not None:
+                self._persist_if_refreshed(api, session_data)
+
+    def _persist_if_refreshed(self, api: "Garmin", session_data: GarminSessionData) -> None:
+        """
+        garminconnect rotates the DI refresh token on every call it makes once
+        the short-lived access token is close to expiry (~15 min), but we
+        restore sessions via loads()/dumps() rather than its own load()/dump()
+        file path, so it never persists that rotation itself. Without this,
+        the next process restores the already-consumed refresh token, Garmin
+        rejects it, and the user is forced back to an email/password login —
+        even though the session was, in principle, still good.
+        """
+        try:
+            refreshed = extract_session(api)
+        except Exception:
+            return
+        if isinstance(refreshed, str) and refreshed != session_data.token_json:
+            self._store.save(replace(session_data, token_json=refreshed))
 
     # ── Public data methods (synchronous) ──────────────────────────────────────
 

@@ -10,15 +10,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from claude2strava.crypto import Crypto
-from claude2strava.garmin.client import (
+from claude2garmin.crypto import Crypto
+from claude2garmin.garmin.client import (
     SOCIAL_PROFILE_PATH,
     GarminClient,
     extract_session,
     profile_names,
     restore_session,
 )
-from claude2strava.garmin.session_store import (
+from claude2garmin.garmin.session_store import (
     GarminNotConnectedError,
     GarminSessionData,
     GarminSessionExpiredError,
@@ -126,7 +126,7 @@ def test_restore_session_calls_loads():
 
 # ── GarminClient ──────────────────────────────────────────────────────────────
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_check_connection_success(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.connectapi.return_value = {
@@ -143,14 +143,14 @@ def test_check_connection_success(MockGarmin, client):
     mock_api.client.loads.assert_called_once_with(SAMPLE_TOKEN_JSON)
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_check_connection_no_session(MockGarmin, store):
     empty_client = GarminClient(store)  # store has no session saved
     with pytest.raises(GarminNotConnectedError):
         empty_client.check_connection()
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_restore_failure_raises_session_expired(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.client.loads.side_effect = Exception("invalid token")
@@ -160,7 +160,7 @@ def test_restore_failure_raises_session_expired(MockGarmin, client):
         client.check_connection()
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_sleep_returns_dict(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_sleep_data.return_value = {
@@ -177,7 +177,7 @@ def test_get_sleep_returns_dict(MockGarmin, client):
     mock_api.get_sleep_data.assert_called_once_with("2024-01-15")
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_hrv_returns_dict(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_hrv_data.return_value = {
@@ -190,7 +190,7 @@ def test_get_hrv_returns_dict(MockGarmin, client):
     assert result["hrvSummary"]["status"] == "BALANCED"
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_daily_stats_returns_dict(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_stats.return_value = {
@@ -204,7 +204,7 @@ def test_get_daily_stats_returns_dict(MockGarmin, client):
     assert result["totalSteps"] == 8500
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_body_battery_returns_list(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_body_battery.return_value = [
@@ -218,7 +218,43 @@ def test_get_body_battery_returns_list(MockGarmin, client):
     assert result[0]["charged"] == 45
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
+def test_rotated_refresh_token_persisted_after_call(MockGarmin, store, saved_session):
+    """
+    garminconnect silently rotates the DI refresh token whenever the access
+    token is close to expiry. If we don't write that rotation back to disk,
+    the next process restores an already-consumed refresh token and the user
+    is forced into a fresh email/password login for no reason.
+    """
+    rotated_token_json = json.dumps({
+        "di_token": "tok_new",
+        "di_refresh_token": "ref_new",
+        "di_client_id": "client_123",
+    })
+    mock_api = MagicMock()
+    mock_api.get_stats.return_value = {"totalSteps": 1}
+    mock_api.client.dumps.return_value = rotated_token_json
+    MockGarmin.return_value = mock_api
+
+    GarminClient(store).get_daily_stats("2024-01-15")
+
+    assert store.load().token_json == rotated_token_json
+
+
+@patch("claude2garmin.garmin.client.Garmin")
+def test_unchanged_token_not_rewritten(MockGarmin, store, saved_session):
+    mock_api = MagicMock()
+    mock_api.get_stats.return_value = {"totalSteps": 1}
+    mock_api.client.dumps.return_value = SAMPLE_TOKEN_JSON
+    MockGarmin.return_value = mock_api
+
+    with patch.object(store, "save") as mock_save:
+        GarminClient(store).get_daily_stats("2024-01-15")
+
+    mock_save.assert_not_called()
+
+
+@patch("claude2garmin.garmin.client.Garmin")
 def test_session_expired_raises(MockGarmin, client):
     from garminconnect import GarminConnectAuthenticationError
     mock_api = MagicMock()
@@ -231,7 +267,7 @@ def test_session_expired_raises(MockGarmin, client):
 
 # ── display_name restoration ───────────────────────────────────────────────────
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_display_name_attached_from_session(MockGarmin, client):
     """Restored sessions must carry the display name — several URLs contain it."""
     mock_api = MagicMock()
@@ -246,7 +282,7 @@ def test_display_name_attached_from_session(MockGarmin, client):
     mock_api.connectapi.assert_not_called()   # no extra request when stored
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_display_name_fetched_and_persisted_for_legacy_session(MockGarmin, store, legacy_session):
     mock_api = MagicMock()
     mock_api.display_name = None
@@ -263,7 +299,7 @@ def test_display_name_fetched_and_persisted_for_legacy_session(MockGarmin, store
     assert store.load().full_name == "Tobias M"
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_missing_display_name_raises_session_expired(MockGarmin, store, legacy_session):
     mock_api = MagicMock()
     mock_api.display_name = None
@@ -302,7 +338,7 @@ def test_profile_names_swallows_fetch_errors():
     assert profile_names(mock_api) == (None, None)
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_user_profile_uses_display_name_from_session(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.display_name = None
@@ -322,7 +358,7 @@ def test_get_user_profile_uses_display_name_from_session(MockGarmin, client):
     assert result["weight_kg"] == pytest.approx(80.5)
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_sleep_range_multi_day(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_sleep_data.return_value = {
@@ -340,7 +376,7 @@ def test_get_sleep_range_multi_day(MockGarmin, client):
     assert result[0]["avg_hrv"] == 55.0
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_weight_single_day(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_body_composition.return_value = {
@@ -370,7 +406,7 @@ def test_get_weight_single_day(MockGarmin, client):
     assert result["body_water_pct"] == pytest.approx(58.2)
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_weight_no_data(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_body_composition.return_value = {"dateWeightList": []}
@@ -380,7 +416,7 @@ def test_get_weight_no_data(MockGarmin, client):
     assert result == {"date": "2024-01-15", "weight_kg": None}
 
 
-@patch("claude2strava.garmin.client.Garmin")
+@patch("claude2garmin.garmin.client.Garmin")
 def test_get_weight_range(MockGarmin, client):
     mock_api = MagicMock()
     mock_api.get_body_composition.return_value = {
