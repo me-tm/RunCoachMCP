@@ -1,7 +1,7 @@
 import pytest
 from cryptography.fernet import Fernet
 
-from claude2strava.crypto import Crypto, CryptoError
+from claude2garmin.crypto import Crypto, CryptoError
 
 
 def test_roundtrip(fernet_key):

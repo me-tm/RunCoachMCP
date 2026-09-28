@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "claude2strava"
+name = "claude2garmin"
 version = "0.1.0"
-description = "RunCoach MCP — Claude MCP server for Garmin Connect and COROS training analysis"
+description = "Claude2Garmin — Claude MCP server for Garmin Connect training and wellness data"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
@@ -25,16 +25,15 @@ dependencies = [
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
-    "respx>=0.21.0",
     "anyio>=4.0.0",
 ]
 
 [project.scripts]
-claude2strava-web = "claude2strava.web.app:main"
-claude2strava-mcp = "claude2strava.mcp_server.server:main"
+claude2garmin-web = "claude2garmin.web.app:main"
+claude2garmin-mcp = "claude2garmin.mcp_server.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/claude2strava"]
+packages = ["src/claude2garmin"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

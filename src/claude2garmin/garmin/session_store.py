@@ -4,7 +4,7 @@ Encrypted session storage for Garmin Connect.
 garminconnect 0.3.x stores auth as three Bearer tokens (di_token,
 di_refresh_token, di_client_id) retrievable via client.dumps() as JSON.
 We encrypt that JSON blob and write it to
-~/.claude2strava/garmin_session.enc  (owner-read-only, mode 0600).
+~/.claude2garmin/garmin_session.enc  (owner-read-only, mode 0600).
 
 Alongside the tokens we persist the profile's displayName: garminconnect
 only sets it during login(), but several endpoints put it in the request URL,
